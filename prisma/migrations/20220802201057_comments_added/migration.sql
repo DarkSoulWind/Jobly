@@ -1,0 +1,18 @@
+-- AlterTable
+ALTER TABLE `Posts` MODIFY `PostText` TEXT NOT NULL;
+
+-- CreateTable
+CREATE TABLE `Comments` (
+    `CommentID` INTEGER NOT NULL AUTO_INCREMENT,
+    `UserID` VARCHAR(191) NOT NULL,
+    `PostID` INTEGER NOT NULL,
+    `CommentText` VARCHAR(191) NOT NULL,
+
+    PRIMARY KEY (`CommentID`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- AddForeignKey
+ALTER TABLE `Comments` ADD CONSTRAINT `Comments_UserID_fkey` FOREIGN KEY (`UserID`) REFERENCES `User`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `Comments` ADD CONSTRAINT `Comments_PostID_fkey` FOREIGN KEY (`PostID`) REFERENCES `Posts`(`PostID`) ON DELETE CASCADE ON UPDATE CASCADE;

@@ -1,0 +1,11 @@
+-- CreateTable
+CREATE TABLE `Interests` (
+    `InterestID` INTEGER NOT NULL AUTO_INCREMENT,
+    `UserID` VARCHAR(191) NOT NULL,
+    `Name` VARCHAR(191) NOT NULL,
+
+    PRIMARY KEY (`InterestID`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- AddForeignKey
+ALTER TABLE `Interests` ADD CONSTRAINT `Interests_UserID_fkey` FOREIGN KEY (`UserID`) REFERENCES `User`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;

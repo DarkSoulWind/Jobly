@@ -20,8 +20,8 @@ export type UserWithPreferences = User & {
 
 export interface FeedState {
 	posts: PostsUserPostLikesComments[] | null;
-	error: string | null;
-	success: string | null;
+	error: string;
+	success: string;
 }
 
 export enum FEED_ACTION {

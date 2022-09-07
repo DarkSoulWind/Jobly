@@ -20,7 +20,8 @@ import { useRouter } from "next/router";
 import { useDate } from "../../hooks/useDate";
 import { deleteObject, ref } from "firebase/storage";
 import { storage } from "../../firebase-config";
-import { Action, FEED_ACTION } from "../../reducers/feedReducer";
+import { Action as FeedAction, FEED_ACTION } from "../../reducers/feedReducer";
+import { AnimatePresence } from "framer-motion";
 
 type PostWithLikesAndUser =
 	| Posts & {
@@ -39,7 +40,7 @@ type PostProps = {
 	pageExpanded: boolean;
 	commentInputRef?: RefObject<HTMLInputElement>;
 	// feed dispatch action
-	dispatch?: Dispatch<Action>;
+	dispatch?: Dispatch<FeedAction>;
 };
 
 const Post: FC<PostProps> = ({
@@ -164,7 +165,7 @@ const Post: FC<PostProps> = ({
 				});
 				dispatch({
 					type: FEED_ACTION.SET_SUCCESS_MESSAGE,
-					payload: { success: "Removed post." },
+					payload: { success: "Post removed successfully!" },
 				});
 			}
 		} catch (error) {
@@ -173,7 +174,7 @@ const Post: FC<PostProps> = ({
 	};
 
 	return (
-		<div className="w-full bg-white shadow-lg shadow-slate-300 rounded-lg overflow-clip border-[1px] border-slate-300">
+		<div className="w-full bg-white shadow-sm shadow-slate-300 rounded-lg overflow-clip border-[1px] border-slate-300">
 			<div className="px-4 py-1">
 				<div className="flex justify-end items-center mb-1">
 					{/* OPTIONS BUTTON */}
@@ -339,20 +340,28 @@ const Post: FC<PostProps> = ({
 				</button>
 			</div>
 			{/* CONFIRM DELETE MODAL */}
-			<Modal
-				open={confirmDeleteOpen as boolean}
-				title="Are you sure?"
-				confirmButton="Delete"
-				confirmButtonAction={deletePost}
-				confirmButtonColour="bg-red-500 hover:bg-red-700"
-				discardButton="Cancel"
-				discardButtonAction={toggleConfirmDelete}
-				discardButtonColour="bg-blue-500 hover:bg-blue-700"
+			<AnimatePresence
+				initial={false}
+				mode="wait"
+				onExitComplete={() => null}
 			>
-				<p className="font-bold">
-					This will permanently delete your post forever.
-				</p>
-			</Modal>
+				{confirmDeleteOpen && (
+					<Modal
+						open={confirmDeleteOpen}
+						title="Are you sure?"
+						confirmButton="Delete"
+						confirmButtonAction={deletePost}
+						confirmButtonColour="bg-red-500 hover:bg-red-700"
+						discardButton="Cancel"
+						discardButtonAction={toggleConfirmDelete}
+						discardButtonColour="bg-blue-500 hover:bg-blue-700"
+					>
+						<p className="font-bold">
+							This will permanently delete your post forever.
+						</p>
+					</Modal>
+				)}
+			</AnimatePresence>
 		</div>
 	);
 };

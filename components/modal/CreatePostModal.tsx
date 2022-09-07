@@ -1,7 +1,7 @@
-import React, { ChangeEvent, FC, useRef, useState } from "react";
+import React, { ChangeEvent, Dispatch, FC, useRef, useState } from "react";
 import Modal from "./Modal";
 import { User, Posts } from "@prisma/client";
-import Alert from "../alert/Alert";
+import { Action as FeedAction, FEED_ACTION } from "../../reducers/feedReducer";
 import { FaHashtag, FaImage, FaTimesCircle } from "react-icons/fa";
 import { useRouter } from "next/router";
 import { getDownloadURL, ref, StorageReference } from "firebase/storage";
@@ -14,12 +14,14 @@ type CreatePostModalProps = {
 	modalOpen: boolean;
 	toggle: () => void;
 	userData?: User;
+	dispatch: Dispatch<FeedAction>;
 };
 
 const CreatePostModal: FC<CreatePostModalProps> = ({
 	modalOpen,
 	toggle,
 	userData,
+	dispatch,
 }) => {
 	const router = useRouter();
 	const [postText, setPostText] = useState("");
@@ -110,8 +112,16 @@ const CreatePostModal: FC<CreatePostModalProps> = ({
 
 			console.log("Posted successfully!", JSON.stringify(data, null, 4));
 			toggle();
+			dispatch({
+				type: FEED_ACTION.SET_SUCCESS_MESSAGE,
+				payload: { success: "Posted successfully!" },
+			});
 			router.push(`/post/${data.PostID}`);
 		} catch (error) {
+			dispatch({
+				type: FEED_ACTION.SET_ERROR_MESSAGE,
+				payload: { error: "Post failed." },
+			});
 			console.error(error);
 		}
 	};

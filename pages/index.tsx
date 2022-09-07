@@ -29,7 +29,7 @@ const Home: NextPage = () => {
 
 			<div className="background"></div>
 			<Navbar />
-			<main>
+			<main className="pt-[3.5rem]">
 				<div className="h-[512px] w-full bg-black">
 					<div className="relative h-full w-full">
 						<img

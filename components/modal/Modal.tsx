@@ -1,5 +1,5 @@
 import React, { FC } from "react";
-import { motion, Variants } from "framer-motion";
+import { AnimatePresence, motion, Variants } from "framer-motion";
 
 type ModalProps = {
 	title?: string;
@@ -26,38 +26,48 @@ const dropIn: Variants = {
 		transition: {
 			duration: 0.1,
 			type: "spring",
+			damping: 25,
+			stiffness: 500,
 		},
 	},
 	exit: {
 		y: "-100vh",
 		opacity: 0,
+		transition: {
+			duration: 0.3,
+		},
 	},
 };
 
 const Modal: FC<ModalProps> = (props: ModalProps) => {
 	return (
+		// BACKDROP
 		<motion.div
 			onClick={props.discardButtonAction}
 			initial={{ opacity: 0 }}
 			animate={{ opacity: 1 }}
 			exit={{ opacity: 0 }}
-			className="absolute top-0 left-0 w-full h-full bg-black bg-opacity-70 flex justify-center items-center"
+			className="fixed top-0 left-0 w-full h-full z-50 bg-black bg-opacity-70 flex justify-center items-center"
 		>
+			{/* MAIN MODAL STUFF */}
 			<motion.div
+				className="w-[70%] h-[70%] flex justify-center items-center"
 				onClick={(e) => e.stopPropagation()}
 				variants={dropIn}
 				initial="hidden"
 				animate="visible"
 				exit="exit"
 			>
-				<div className="flex flex-col justify-start h-[70%] overflow-clip w-[70%] border-[1px] border-slate-200 rounded-xl">
+				<div className="flex flex-col justify-start h-full overflow-clip w-full rounded-xl">
 					<div className="rounded-t-xl p-4 bg-white">
 						<h1 className="text-2xl font-medium">{props.title}</h1>
 						<hr />
 					</div>
+
 					<div className="bg-white px-4 pb-4 max-h-[80%] overflow-y-auto">
 						{props.children}
 					</div>
+
 					<div className="flex py-2 bg-slate-100 rounded-b-xl px-4 items-center justify-end gap-2">
 						{/* OPTIONAL DISCARD BUTTON */}
 						{props.discardButton && (

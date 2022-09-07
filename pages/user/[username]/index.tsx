@@ -26,8 +26,9 @@ import {
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/router";
 import { useDate } from "../../../hooks/useDate";
-import { motion } from "framer-motion";
+import { AnimatePresence, motion, Variants } from "framer-motion";
 import Modal from "../../../components/modal/Modal";
+import Alert from "../../../components/alert/Alert";
 
 interface UserProfileProps {
 	profile: UserProfile;
@@ -50,6 +51,7 @@ export const initProfileState = ({
 	return {
 		profile,
 		isFollowing: false,
+		successMessage: "",
 	};
 };
 
@@ -84,11 +86,15 @@ const UserProfile: NextPage<UserProfileProps> = ({ profile }) => {
 		setEditProfileModalOpen,
 		toggleEditProfileModal,
 	] = useModal(false);
-
 	const [contactModalOpen, setContactModalOpen, toggleContactModal] =
 		useModal(false);
 	const [followersModalOpen, setFollowersModalOpen, toggleFollowersModal] =
 		useModal(false);
+
+	// ALERTS
+	const [successMessage, setSuccessMessage] = useState(
+		"Profile changed successfully."
+	);
 
 	// Fetch your data if your email and the profile email do not match
 	useEffect(() => {
@@ -247,6 +253,26 @@ const UserProfile: NextPage<UserProfileProps> = ({ profile }) => {
 			</Head>
 			<Navbar />
 			<div className="background"></div>
+
+			<AnimatePresence
+				initial={false}
+				mode="wait"
+				onExitComplete={() => null}
+			>
+				{profileState.successMessage !== "" && (
+					<Alert
+						level="Success"
+						message={profileState.successMessage}
+						open={profileState.successMessage !== ""}
+						closeAction={() =>
+							dispatch({
+								type: PROFILE_ACTION.SET_SUCCESS_MESSAGE,
+								payload: { successMessage: "" },
+							})
+						}
+					/>
+				)}
+			</AnimatePresence>
 
 			<div className="w-full pt-[4.25rem] px-5 grid gap-3 grid-cols-2">
 				{/* PROFILE CARD */}
@@ -505,38 +531,49 @@ const UserProfile: NextPage<UserProfileProps> = ({ profile }) => {
 					</div>
 				</section>
 			</div>
-			{editProfileModalOpen && (
-				<EditProfileModal
-					profileState={profileState}
-					dispatch={dispatch}
-					modalOpen={editProfileModalOpen}
-					toggle={toggleEditProfileModal}
-				/>
-			)}
-			{contactModalOpen && (
-				<ContactDetailModal
-					modalOpen={contactModalOpen}
-					toggle={toggleContactModal}
-					profileState={profileState}
-				/>
-			)}
 
-			{followersModalOpen && (
-				<Modal
-					open={followersModalOpen}
-					confirmButton="Close"
-					confirmButtonAction={toggleFollowersModal}
-					title="Followers"
-				>
-					<div>
-						{profileState.profile.followers.map((follower) => (
-							<div key={follower.followerId}>
-								{follower.followerId}
-							</div>
-						))}
-					</div>
-				</Modal>
-			)}
+			{/* MODALS */}
+
+			<AnimatePresence
+				initial={false}
+				mode="wait"
+				onExitComplete={() => null}
+			>
+				{editProfileModalOpen && (
+					<EditProfileModal
+						profileState={profileState}
+						dispatch={dispatch}
+						modalOpen={editProfileModalOpen}
+						toggle={toggleEditProfileModal}
+					/>
+				)}
+
+				{contactModalOpen && (
+					<ContactDetailModal
+						modalOpen={contactModalOpen}
+						toggle={toggleContactModal}
+						profileState={profileState}
+					/>
+				)}
+
+				{followersModalOpen && (
+					<Modal
+						open={followersModalOpen}
+						confirmButton="Close"
+						confirmButtonAction={toggleFollowersModal}
+						title="Followers"
+					>
+						<div>
+							{profileState.profile.followers.map((follower) => (
+								<div key={follower.followerId}>
+									{follower.followerId}
+								</div>
+							))}
+						</div>
+					</Modal>
+				)}
+			</AnimatePresence>
+
 			<Footer />
 		</>
 	);

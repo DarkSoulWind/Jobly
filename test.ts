@@ -1,6 +1,15 @@
 import { createHash } from "crypto";
 import { prisma } from "./lib/prisma";
 
+function map<T, V>(iter: T[], func: (value: T) => V): V[] {
+	return iter.map(func);
+}
+
+const a = [1, 2, 3, 4];
+const b = map(a, (num) => {
+	return num.toString();
+});
+
 const els = [
 	'\n            <a class="menu-path">Résumé Help<span class="small-icon caret-down"></span></a>\n            <div class="title-bar-dd-content">\n              <ul>\n                <li><a href="/cv-review" itemprop="name">Résumé Review Service</a></li>\n                <li><a href="/cv-writing" itemprop="name">Professional Résumé Writing</a></li>\n                <li><a href="/cv-bundles" itemprop="name">Résumé Bundle Packs</a></li>\n                <li><a href="/cv-templates" itemprop="name">Downloadable Templates</a></li>\n                <li><a href="/cv-help" itemprop="name">View all services</a></li>\n              </ul>\n            </div>\n          ',
 	'<a href="/cv-review" itemprop="name">Résumé Review Service</a>',
@@ -275,11 +284,11 @@ const main = async () => {
 	// els.forEach((el, i) => {
 	// 	if (el.includes("li")) console.log(i, el);
 	// });
-	await prisma.chat.create({
-		data: {
-			Name: "cool chat",
-		},
-	});
+	// await prisma.chat.create({
+	// 	data: {
+	// 		Name: "cool chat",
+	// 	},
+	// });
 };
 
 main();

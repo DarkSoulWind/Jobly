@@ -20,18 +20,19 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/router";
 import Alert from "../../components/alert/Alert";
 import SkeletonLoaderPost from "../../components/post/SkeletonLoaderPost";
+import { AnimatePresence } from "framer-motion";
 
 // INITIALIZER FOR GLOBAL STATE FOR THIS COMPONENT
 const initFeedState = ({}): FeedState => {
 	return {
 		posts: null,
-		error: null,
+		error: "",
 		success: "",
 	};
 };
 
 const Feed: NextPage = () => {
-	const { status, data } = useSession();
+	const { data } = useSession();
 	const router = useRouter();
 
 	// GLOBAL FEED STATE
@@ -99,23 +100,7 @@ const Feed: NextPage = () => {
 			</Head>
 			<Navbar />
 			<div className="background"></div>
-
 			<div className="w-full flex flex-col items-center pt-14">
-				{feedState.success && (
-					<div className="fixed w-full px-10 z-10">
-						<Alert
-							level="Success"
-							message={feedState.success}
-							open={feedState.success.length > 0}
-							closeAction={() =>
-								dispatch({
-									type: FEED_ACTION.SET_SUCCESS_MESSAGE,
-									payload: { success: "" },
-								})
-							}
-						/>
-					</div>
-				)}
 				<div
 					className={`${
 						feedState.success ? "mt-16" : ""
@@ -250,7 +235,7 @@ const Feed: NextPage = () => {
 									onClick={
 										toggleCreatePostModal as () => void
 									}
-									className="border-[1px] font-semibold text-slate-600 border-slate-500 hover:bg-slate-200 transition-all rounded-full w-full text-left px-4 py-[0.85rem]"
+									className="font-light text-slate-600 bg-slate-200/70 hover:bg-slate-200 transition-all rounded-full w-full text-left px-4 py-[0.85rem]"
 								>
 									Start a post
 								</button>
@@ -259,8 +244,9 @@ const Feed: NextPage = () => {
 
 						{/* SHOW POSTS */}
 						<div className="flex flex-col w-full gap-2">
-							{feedState.posts
-								? feedState?.posts?.map((post) => (
+							{feedState.posts ? (
+								<div className="flex flex-col items-center gap-2">
+									{feedState?.posts?.map((post) => (
 										<div
 											className="w-full"
 											key={post.PostID}
@@ -274,19 +260,68 @@ const Feed: NextPage = () => {
 												dispatch={dispatch}
 											/>
 										</div>
-								  ))
-								: [1, 2, 3].map(() => <SkeletonLoaderPost />)}
+									))}
+									<p className="mt-6 text-2xl font-semibold">
+										All caught up!
+									</p>
+								</div>
+							) : (
+								[1, 2, 3].map(() => <SkeletonLoaderPost />)
+							)}
 						</div>
 					</div>
 				</div>
 			</div>
 
 			{/* FOR CREATING POSTS */}
-			<CreatePostModal
-				modalOpen={createPostModalOpen as boolean}
-				toggle={toggleCreatePostModal as () => void}
-				userData={yourData as User}
-			/>
+			<AnimatePresence
+				initial={false}
+				mode="wait"
+				onExitComplete={() => null}
+			>
+				{createPostModalOpen && (
+					<CreatePostModal
+						modalOpen={createPostModalOpen}
+						toggle={toggleCreatePostModal}
+						userData={yourData as User}
+						dispatch={dispatch}
+					/>
+				)}
+			</AnimatePresence>
+
+			<AnimatePresence
+				initial={false}
+				mode="wait"
+				onExitComplete={() => null}
+			>
+				{feedState.success !== "" && (
+					<Alert
+						level="Success"
+						message={feedState.success}
+						open={feedState.success.length > 0}
+						closeAction={() =>
+							dispatch({
+								type: FEED_ACTION.SET_SUCCESS_MESSAGE,
+								payload: { success: "" },
+							})
+						}
+					/>
+				)}
+				{feedState.error !== "" && (
+					<Alert
+						level="Error"
+						message={feedState.error}
+						open={feedState.error.length > 0}
+						closeAction={() =>
+							dispatch({
+								type: FEED_ACTION.SET_ERROR_MESSAGE,
+								payload: { error: "" },
+							})
+						}
+					/>
+				)}
+			</AnimatePresence>
+
 			<Footer />
 		</div>
 	);

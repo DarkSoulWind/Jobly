@@ -89,6 +89,10 @@ const EditProfileModal: FC<EditProfileModalProps> = ({
 			console.log("Updated data", JSON.stringify(data, null, 4));
 
 			toggle();
+			dispatch({
+				type: PROFILE_ACTION.SET_SUCCESS_MESSAGE,
+				payload: { successMessage: "Profile changed successfully." },
+			});
 		} catch (error) {
 			console.error(error);
 		}

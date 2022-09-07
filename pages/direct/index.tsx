@@ -17,6 +17,7 @@ import {
 	AllFollows,
 } from "../../reducers/chatReducer";
 import { useModal } from "../../hooks/useModal";
+import { AnimatePresence } from "framer-motion";
 
 // GLOBAL STATE FOR THIS PAGE
 const initialChatState: ChatState = {
@@ -282,57 +283,70 @@ const DirectMessagesPage: NextPage = () => {
 					</div>
 				</main>
 			</div>
-			<Modal
-				open={newChatOpen}
-				title="New message"
-				confirmButton="Next"
-				confirmButtonAction={toggleNewChatOpen}
-			>
-				<div>
-					<h5 className="font-semibold text-sms px-3 pb-3">
-						Suggested
-					</h5>
 
-					{/* RECOMMEND FOLLOWS */}
-					<form>
-						{chatState.follows?.map((follow, index) => (
-							<div key={index}>
-								<div className="w-full flex hover:bg-slate-100 cursor-pointer justify-between items-center px-3 py-2">
-									<div className="flex items-center gap-2">
-										<img
-											src={
-												follow.image ??
-												"https://i.pinimg.com/736x/dd/f0/11/ddf0110aa19f445687b737679eec9cb2.jpg"
-											}
-											className="rounded-full w-12 h-12"
-											onError={(e) => {
-												e.preventDefault();
-												console.log(
-													"ERROR LOADING IMAGE"
-												);
-												e.currentTarget.onerror = null;
-												e.currentTarget.classList.add(
-													"animate-pulse"
-												);
-												e.currentTarget.src =
-													"https://i.pinimg.com/736x/dd/f0/11/ddf0110aa19f445687b737679eec9cb2.jpg";
-											}}
-											alt="PFP"
-										/>
-										<div className="block -space-y-1 text-sm">
-											<p className="font-bold">
-												{follow.name}
-											</p>
-											<p>hi</p>
+			<AnimatePresence
+				initial={false}
+				mode="wait"
+				onExitComplete={() => null}
+			>
+				{newChatOpen && (
+					<Modal
+						open={newChatOpen}
+						title="New message"
+						confirmButton="Next"
+						confirmButtonAction={toggleNewChatOpen}
+					>
+						<div>
+							<h5 className="font-semibold text-sms px-3 pb-3">
+								Suggested
+							</h5>
+
+							{/* RECOMMEND FOLLOWS */}
+							<form>
+								{chatState.follows?.map((follow, index) => (
+									<div key={index}>
+										<div className="w-full flex hover:bg-slate-100 cursor-pointer justify-between items-center px-3 py-2">
+											<div className="flex items-center gap-2">
+												<img
+													src={
+														follow.image ??
+														"https://i.pinimg.com/736x/dd/f0/11/ddf0110aa19f445687b737679eec9cb2.jpg"
+													}
+													className="rounded-full w-12 h-12"
+													onError={(e) => {
+														e.preventDefault();
+														console.log(
+															"ERROR LOADING IMAGE"
+														);
+														e.currentTarget.onerror =
+															null;
+														e.currentTarget.classList.add(
+															"animate-pulse"
+														);
+														e.currentTarget.src =
+															"https://i.pinimg.com/736x/dd/f0/11/ddf0110aa19f445687b737679eec9cb2.jpg";
+													}}
+													alt="PFP"
+												/>
+												<div className="block -space-y-1 text-sm">
+													<p className="font-bold">
+														{follow.name}
+													</p>
+													<p>hi</p>
+												</div>
+											</div>
+											<input
+												type="radio"
+												className="w-5 h-5"
+											/>
 										</div>
 									</div>
-									<input type="radio" className="w-5 h-5" />
-								</div>
-							</div>
-						))}
-					</form>
-				</div>
-			</Modal>
+								))}
+							</form>
+						</div>
+					</Modal>
+				)}
+			</AnimatePresence>
 		</div>
 	);
 };

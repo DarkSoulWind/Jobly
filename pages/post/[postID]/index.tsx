@@ -111,11 +111,14 @@ const PostPage: NextPage<PostPageProps> = ({
 				</title>
 				<meta name="description" content={postData?.PostText} />
 			</Head>
+
 			<Navbar />
+
 			<div className="background"></div>
+
 			<div className="w-screen relative p-5 gap-5 flex justify-center items-start">
 				{/* SIDE PROFILE */}
-				<aside className="hidden md:block relative mt-12 w-[15rem]">
+				<aside className="hidden md:block relative mt-[3.5rem] w-[15rem]">
 					<div className="fixed w-[15rem] overflow-clip grid grid-cols-1 bg-white border-[1px] border-slate-300 rounded-lg">
 						<img
 							src={
@@ -169,9 +172,10 @@ const PostPage: NextPage<PostPageProps> = ({
 						</div>
 					</div>
 				</aside>
+
 				<div className="w-[30rem] flex flex-col gap-2 items-center justify-start">
 					{/* MAIN POST */}
-					<main className="w-[30rem] flex flex-col mt-12 gap-2 items-center justify-start">
+					<main className="w-[30rem] flex flex-col mt-[3.5rem] gap-2 items-center justify-start">
 						<div className="w-full">
 							<PostComponent
 								postData={postData}

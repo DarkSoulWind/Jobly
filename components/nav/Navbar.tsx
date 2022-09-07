@@ -1,7 +1,7 @@
 import React, { FC, useState } from "react";
 import { useRouter } from "next/router";
 import { signOut, useSession } from "next-auth/react";
-import { FaSearch } from "react-icons/fa";
+import { FaComment, FaSearch, FaSuitcase, FaUsers } from "react-icons/fa";
 
 interface NavbarProps {
 	searchitem?: string;
@@ -13,91 +13,105 @@ const Navbar: FC<NavbarProps> = (props) => {
 	const [searchInput, setSearchInput] = useState(props.searchitem ?? "");
 
 	return (
-		<nav className="w-full fixed z-50 px-4 bg-gradient-to-b from-slate-500 to-transparent flex justify-between items-center">
-			<div className="flex justify-start items-center gap-5">
+		<nav className="w-full bg-slate-50 shadow-gray-300/50 shadow-md fixed py-1 px-4 z-10 flex justify-between items-center">
+			<div className="flex justify-start items-center gap-2">
 				<header
 					className="flex py-1 justify-start cursor-pointer items-end"
 					onClick={() =>
 						router.push(status === "authenticated" ? "/feed" : "/")
 					}
 				>
-					<h1 className="font-bold text-4xl text-black">
-						Job<span className="text-white">ly</span>
-					</h1>
+					<h1 className="font-bold text-4xl text-black">Jobly</h1>
 				</header>
-				<button
-					onClick={() => router.push("/jobs")}
-					className={`transition-all text-white font-light duration-300 border-blue-800 focus:border-b-2 hover:border-b-2 ${
-						router.route === "/jobs" ? "border-b-2" : ""
-					}`}
-				>
-					Find a job
-				</button>
+
 				{/* SEARCH BAR */}
 				{status === "authenticated" && (
 					<form
 						autoCorrect="off"
 						autoCapitalize="off"
 						spellCheck={false}
-						className="flex justify-start items-center border-[1px] py-1 px-5 rounded-xl gap-2"
+						className="flex justify-start bg-slate-200/70 h-10 items-center py-2 px-5 rounded-full gap-2"
 						onSubmit={(e) => {
 							e.preventDefault();
 							router.push(`/search/${searchInput}`);
 						}}
 					>
+						<button type="submit">
+							<FaSearch className="w-5 h-5 fill-slate-500" />
+						</button>
+
 						<input
 							type="search"
 							value={searchInput}
 							onChange={(e) => setSearchInput(e.target.value)}
-							placeholder="Find a user, post, comment"
-							className="bg-transparent outline-none text-white w-[15rem] placeholder:text-slate-200"
+							placeholder="Search Jobly"
+							className="bg-transparent outline-none font-light text-sm text-black w-[15rem] placeholder:text-slate-500"
 						/>
-						<button type="submit">
-							<FaSearch className="w-5 h-5 fill-white" />
-						</button>
 					</form>
-				)}{" "}
+				)}
+
+				<button
+					onClick={() => router.push("/jobs")}
+					className={`transition-all p-1 h-10 w-10 rounded-full bg-slate-200/70 focus:bg-slate-300/70 hover:bg-slate-300/70 duration-300 flex items-center justify-center ${
+						router.route === "/jobs" ? "bg-slate-300/70" : ""
+					}`}
+				>
+					<FaSuitcase />
+				</button>
 			</div>
 
 			{/* SHOW USER IF USER IS AUTHENTICATED */}
 			{status === "authenticated" && (
-				<div className="flex justify-end items-baseline gap-5">
+				<div className="flex justify-end items-center gap-2">
 					<button
 						onClick={() => router.push("/direct")}
-						className={`transition-all text-white duration-300 font-light border-blue-800 focus:border-b-2 hover:border-b-2 ${
+						className={`transition-all p-1 h-10 w-10 rounded-full bg-slate-200/70 focus:bg-slate-300/70 hover:bg-slate-300/70 duration-300 flex items-center justify-center ${
 							router.route.startsWith("/direct")
-								? "border-b-2"
+								? "bg-slate-300/70 "
 								: ""
 						}`}
 					>
-						Messages
+						<FaComment />
 					</button>
 
 					<button
 						onClick={() => router.push("/connect")}
-						className={`transition-all text-white duration-300 font-light border-blue-800 focus:border-b-2 hover:border-b-2 ${
+						className={`transition-all p-1 h-10 w-10 rounded-full bg-slate-200/70 focus:bg-slate-300/70 hover:bg-slate-300/70 duration-300 flex items-center justify-center  ${
 							router.route.startsWith("/connect")
-								? "border-b-2"
+								? "bg-slate-300/70 "
 								: ""
 						}`}
 					>
-						Connect
+						<FaUsers />
 					</button>
 
 					<button
-						className={`transition-all group relative text-white font-medium duration-300 border-blue-800 focus:border-b-2 hover:border-b-2 ${
+						className={`transition-all group relative h-10 w-10 ${
 							router.route.startsWith(
 								`/user/${data?.user?.name
 									?.split(" ")
 									.join("%20")}`
 							)
-								? "border-b-2"
+								? "bg-slate-300/70 "
 								: ""
 						}`}
 					>
-						{data.user?.name}
+						<img
+							onError={(e) => {
+								e.preventDefault();
+								console.log("ERROR LOADING IMAGE");
+								e.currentTarget.onerror = null;
+								e.currentTarget.classList.add("animate-pulse");
+								e.currentTarget.src =
+									"https://i.pinimg.com/736x/dd/f0/11/ddf0110aa19f445687b737679eec9cb2.jpg";
+							}}
+							src={data?.user?.image ?? ""}
+							className="rounded-full"
+							alt="User PFP"
+						/>
+
 						{/* DROPDOWN WHEN CLICKING ON USER */}
-						<div className="group-focus-within:block hidden shadow-md shadow-gray-500 absolute right-0 -bottom-40 z-10 w-[300%] bg-slate-100 text-black rounded-lg">
+						<div className="group-focus-within:block hidden shadow-md shadow-gray-500 absolute right-0 -bottom-40 z-10 min-w-[10rem] max-w-[30rem] bg-slate-100 text-black rounded-lg">
 							<div className="flex p-2 justify-start items-center text-left gap-2">
 								{/* USER PFP */}
 								<img
@@ -115,8 +129,10 @@ const Navbar: FC<NavbarProps> = (props) => {
 											"https://i.pinimg.com/736x/dd/f0/11/ddf0110aa19f445687b737679eec9cb2.jpg";
 									}}
 								/>
-								<div className="overflow-ellipsis">
-									<h3>{data.user?.name}</h3>
+								<div className="overflow-ellipsis overflow-hidden whitespace-nowrap">
+									<h3>
+										{data.user?.name} dsdkla asdlkj asdlkj
+									</h3>
 									<p>--</p>
 								</div>
 							</div>
@@ -151,7 +167,7 @@ const Navbar: FC<NavbarProps> = (props) => {
 				<div className="flex justify-end items-center gap-5">
 					<button
 						onClick={() => router.push("/auth/signin")}
-						className={`transition-all text-white font-light duration-300 border-blue-800 focus:border-b-2 hover:border-b-2 ${
+						className={`transition-all text-black font-light duration-300 border-blue-800 focus:border-b-2 hover:border-b-2 ${
 							router.route === "/auth/signin" ? "border-b-2" : ""
 						}`}
 					>

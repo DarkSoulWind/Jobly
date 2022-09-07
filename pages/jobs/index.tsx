@@ -5,6 +5,7 @@ import { FaLocationArrow, FaSearch } from "react-icons/fa";
 import Head from "next/head";
 import Navbar from "../../components/nav/Navbar";
 import Footer from "../../components/footer/Footer";
+import LoadingJobListing from "../../components/job/SkeletonLoadingJob";
 
 interface JobListing {
 	jobTitle: string;
@@ -18,19 +19,6 @@ type JobsProps = {
 		results: JobListing[];
 	};
 };
-
-// Skeleton job listing for when data is loading
-const LoadingJobListing = () => {
-	return (
-		<div className="w-80 flex flex-col items-start justify-start gap-2 p-5 border-[1px] border-black bg-white rounded-lg">
-			<div className="w-full rounded-full h-5 bg-slate-200 animate-pulse"></div>
-			<div className="w-10/12 rounded-full h-5 bg-slate-200 animate-pulse"></div>
-			<div className="w-1/2 rounded-full h-5 bg-slate-200 animate-pulse"></div>
-			<div className="w-4/6 rounded-full h-5 bg-slate-200 animate-pulse"></div>
-		</div>
-	);
-};
-
 interface JobSearchState {
 	searchInput: string;
 	locationInput: string;
@@ -188,25 +176,25 @@ const Jobs: NextPage<JobsProps> = (props: JobsProps) => {
 			</Head>
 
 			<div className="background"></div>
+
 			<Navbar />
-			<main className="p-2 flex flex-col items-center">
+
+			<div className="p-2 flex flex-col items-center">
 				{/* JOB SEARCH */}
 				<form
 					onSubmit={handleSubmit}
-					className="flex justify-center sticky items-center flex-wrap mt-12 gap-5"
-					action=""
+					className="flex justify-center border-[1px] border-slate-300 bg-white py-3 px-4 rounded-xl sticky items-center flex-wrap mt-[4.5rem] gap-3"
 				>
 					{/* SEARCH WHAT JOB */}
-					<div className="flex justify-start items-center gap-3 py-2 px-5 border bg-white border-black shadow-black shadow-sm rounded-lg">
-						<label className="font-semibold" htmlFor="">
-							What
-						</label>
+					<div className="flex justify-start items-center gap-3 py-2 px-5 bg-slate-200/70 rounded-full">
+						<FaSearch className="fill-slate-500" />
+
+						<label className="font-semibold">What</label>
+
 						<input
 							type="text"
-							className="outline-none bg-transparent"
-							name=""
+							className="outline-none font-light text-sm text-black placeholder:text-slate-500 bg-transparent"
 							placeholder="Job title, etc"
-							id=""
 							value={jobSearchState.searchInput}
 							onChange={(e) =>
 								dispatch({
@@ -215,20 +203,18 @@ const Jobs: NextPage<JobsProps> = (props: JobsProps) => {
 								})
 							}
 						/>
-						<FaSearch />
 					</div>
 
 					{/* SEARCH WHERE JOB */}
-					<div className="flex justify-start items-center gap-3 py-2 px-5 border bg-white border-black shadow-black shadow-sm rounded-lg">
-						<label className="font-semibold" htmlFor="">
-							Where
-						</label>
+					<div className="flex justify-start items-center gap-3 py-2 px-5 bg-slate-200/70 rounded-full">
+						<FaLocationArrow className="fill-slate-500" />
+
+						<label className="font-semibold">Where</label>
+
 						<input
 							type="text"
-							className="outline-none bg-transparent"
-							name=""
-							placeholder="Job title, etc"
-							id=""
+							className="outline-none font-light text-sm text-black placeholder:text-slate-500 bg-transparent"
+							placeholder="London, England, etc"
 							value={jobSearchState.locationInput}
 							onChange={(e) =>
 								dispatch({
@@ -237,93 +223,135 @@ const Jobs: NextPage<JobsProps> = (props: JobsProps) => {
 								})
 							}
 						/>
-						<FaLocationArrow />
 					</div>
+
 					<input
 						type="submit"
-						className="py-2 px-4 cursor-pointer bg-blue-700 hover:bg-blue-900 text-white disabled:bg-blue-900 disabled:cursor-wait ease-in-out transition-all font-semibold rounded-lg"
+						className="py-2 px-4 cursor-pointer bg-blue-700 hover:bg-blue-900 text-white disabled:bg-blue-900 disabled:cursor-wait ease-in-out transition-all font-semibold rounded-full"
 						disabled={jobSearchState.loading}
 						value="Find job"
 					/>
 				</form>
 
-				<aside className="w-[10rem] px-6 pt-12 flex justify-center items-start gap-5">
-					{/* FILTERS */}
-					<div className="px-5 border-[1px] flex flex-col divide-y-2 border-slate-500 bg-white rounded-lg">
-						{/* DISTANCE FILTERS */}
-						<div className="w-[15rem] py-5 flex flex-col items-start gap-3">
-							<p className="font-bold">Distance</p>
-							{distanceTypes.map((distance) => (
-								<div
-									key={distance}
-									className="w-full flex justify-start gap-4 items-center "
-								>
-									<input
-										type="radio"
-										name="Distance"
-										value={distance}
-										className="w-5 h-5"
-									/>
-									<label>Within {distance}km</label>
-								</div>
-							))}
-						</div>
+				{router.query.search ? (
+					<div className="px-6 py-5 flex justify-center items-start gap-5">
+						{/* FILTERS */}
+						<aside className="px-5 border-[1px] flex flex-col divide-y-2 border-slate-300 bg-white rounded-lg">
+							{/* DISTANCE FILTERS */}
+							<div className="w-[15rem] py-5 flex flex-col items-start gap-3">
+								<p className="font-bold">Distance</p>
+								{distanceTypes.map((distance) => (
+									<div
+										key={distance}
+										className="w-full flex justify-start gap-4 items-center "
+									>
+										<input
+											type="radio"
+											name="Distance"
+											value={distance}
+											className="w-5 h-5"
+										/>
+										<label>Within {distance}km</label>
+									</div>
+								))}
+							</div>
 
-						{/* JOB TYPE FILTERS */}
-						<div className="w-[15rem] py-5 flex flex-col items-start gap-3">
-							<p className="font-bold">Type</p>
-							{jobTypes.map((jobType) => (
-								<div
-									key={jobType}
-									className="w-full flex justify-start gap-4 items-center"
-								>
-									<input
-										type="checkbox"
-										name={jobType}
-										value={jobType}
-										className="w-5 h-5"
-									/>
-									<label>{jobType}</label>
-								</div>
-							))}
-						</div>
-					</div>
+							{/* JOB TYPE FILTERS */}
+							<div className="w-[15rem] py-5 flex flex-col items-start gap-3">
+								<p className="font-bold">Type</p>
+								{jobTypes.map((jobType) => (
+									<div
+										key={jobType}
+										className="w-full flex justify-start gap-4 items-center"
+									>
+										<input
+											type="checkbox"
+											name={jobType}
+											value={jobType}
+											className="w-5 h-5"
+										/>
+										<label>{jobType}</label>
+									</div>
+								))}
+							</div>
+						</aside>
 
-					{/* JOB RESULTS */}
-					<div className="">
-						{jobSearchState.jobResults &&
-						jobSearchState.jobResults.length > 0 ? (
-							// SHOW SKELETON JOB RESULTS WHEN LOADING
-							jobSearchState.loading ? (
-								<div className="flex flex-col items-start justify-start gap-5">
-									{[1, 2, 3, 4, 5].map(() => (
-										<LoadingJobListing />
-									))}
-								</div>
+						{/* JOB RESULTS */}
+						<main>
+							{jobSearchState.jobResults &&
+							jobSearchState.jobResults.length > 0 ? (
+								// SHOW SKELETON JOB RESULTS WHEN LOADING
+								jobSearchState.loading ? (
+									<div className="flex flex-col items-start justify-start gap-5">
+										{[1, 2, 3, 4, 5].map(() => (
+											<LoadingJobListing />
+										))}
+									</div>
+								) : (
+									<div className="w-full flex flex-col items-start gap-5">
+										{jobSearchState.jobResults.map(
+											(job, index) => (
+												<div
+													key={index}
+													className="p-5 border-[1px] border-slate-300 bg-white w-80 rounded-lg"
+												>
+													<p className="font-bold">
+														{job.jobTitle}
+													</p>
+													<p>{job.jobLocation}</p>
+													<p>{job.jobDescription}</p>
+												</div>
+											)
+										)}
+									</div>
+								)
 							) : (
-								<div className="w-full flex flex-col items-start gap-5">
-									{jobSearchState.jobResults.map(
-										(job, index) => (
-											<div
-												key={index}
-												className="p-5 border-[1px] border-slate-500 bg-white w-80 rounded-lg"
-											>
-												<p className="font-bold">
-													{job.jobTitle}
-												</p>
-												<p>{job.jobLocation}</p>
-												<p>{job.jobDescription}</p>
-											</div>
-										)
-									)}
-								</div>
-							)
-						) : (
-							<div>No jobs</div>
-						)}
+								<div>No jobs</div>
+							)}
+						</main>
 					</div>
-				</aside>
-			</main>
+				) : (
+					<div className="py-10 text-center space-y-4 max-w-[50rem]">
+						<p className="font-semibold text-lg">
+							Popular searches
+						</p>
+
+						<div className="flex flex-wrap gap-3 items-center justify-center">
+							{[
+								"Supermarket",
+								"Healthcare",
+								"Call Centre",
+								"Delivery Driver",
+								"Customer Service",
+								"Work From Home",
+								"Temporary",
+								"Full Time",
+								"Warehouse",
+								"Care Assistant",
+							].map((job, index) => (
+								<button
+									className="p-2 flex items-center gap-3 bg-gray-300 hover:bg-gray-400/60 transition-all rounded-lg text-sm font-light"
+									onClick={() => {
+										dispatch({
+											type: JOB_SEARCH_ACTION.SET_SEARCH_INPUTS,
+											payload: { searchInput: job },
+										});
+										router.push({
+											pathname: "/jobs",
+											query: { search: job },
+										});
+									}}
+									key={index}
+								>
+									<FaSearch className="fill-slate-600" />
+									<p>{job}</p>
+								</button>
+							))}
+						</div>
+					</div>
+				)}
+			</div>
+
 			<Footer />
 		</div>
 	);

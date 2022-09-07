@@ -29,17 +29,20 @@ export interface UserProfile {
 export interface ProfileState {
 	profile: UserProfile;
 	isFollowing: boolean;
+	successMessage: string;
 }
 
 export enum PROFILE_ACTION {
 	SET_IS_FOLLOWING,
 	SET_PROFILE_INFO,
+	SET_SUCCESS_MESSAGE,
 }
 
 export interface Action {
 	type: PROFILE_ACTION;
 	payload: {
 		isFollowing?: boolean;
+		successMessage?: string;
 		follow?: {
 			action: "add" | "remove";
 			data: {
@@ -102,6 +105,12 @@ export const profileReducer = (
 						...action.payload.profileUpdate,
 					},
 				},
+			};
+		case PROFILE_ACTION.SET_SUCCESS_MESSAGE:
+			return {
+				...state,
+				successMessage:
+					action.payload.successMessage ?? state.successMessage,
 			};
 		default:
 			return state;

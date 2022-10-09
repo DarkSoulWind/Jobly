@@ -29,6 +29,7 @@ import { useDate } from "../../../hooks/useDate";
 import { AnimatePresence, motion, Variants } from "framer-motion";
 import Modal from "../../../components/modal/Modal";
 import Alert from "../../../components/alert/Alert";
+import FollowersModal from "../../../components/modal/FollowersModal";
 
 interface UserProfileProps {
 	profile: UserProfile;
@@ -41,6 +42,11 @@ type UserPreferencesFollows =
 			following: Follows[];
 	  })
 	| null;
+
+type FollowResponse = {
+	follower: User;
+	followerId: string;
+};
 
 // INITIALISER FOR GLOBAL STATE FOR THIS COMPONENT
 export const initProfileState = ({
@@ -154,7 +160,7 @@ const UserProfile: NextPage<UserProfileProps> = ({ profile }) => {
 						body: JSON.stringify(body),
 					}
 				);
-				const data = await response.json();
+				const data: FollowResponse = await response.json();
 
 				if (!response.ok) {
 					throw new Error(JSON.stringify(data, null, 4));
@@ -180,7 +186,7 @@ const UserProfile: NextPage<UserProfileProps> = ({ profile }) => {
 						body: JSON.stringify(body),
 					}
 				);
-				const data: Follows = await response.json();
+				const data: FollowResponse = await response.json();
 
 				if (!response.ok) {
 					throw new Error(JSON.stringify(data, null, 4));
@@ -553,24 +559,16 @@ const UserProfile: NextPage<UserProfileProps> = ({ profile }) => {
 						modalOpen={contactModalOpen}
 						toggle={toggleContactModal}
 						profileState={profileState}
+						dispatch={dispatch}
 					/>
 				)}
 
 				{followersModalOpen && (
-					<Modal
-						open={followersModalOpen}
-						confirmButton="Close"
-						confirmButtonAction={toggleFollowersModal}
-						title="Followers"
-					>
-						<div>
-							{profileState.profile.followers.map((follower) => (
-								<div key={follower.followerId}>
-									{follower.followerId}
-								</div>
-							))}
-						</div>
-					</Modal>
+					<FollowersModal
+						modalOpen={followersModalOpen}
+						profileState={profileState}
+						toggle={toggleFollowersModal}
+					/>
 				)}
 			</AnimatePresence>
 

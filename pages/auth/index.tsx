@@ -77,9 +77,7 @@ const Register: NextPage = () => {
 					className="flex py-4 justify-start cursor-pointer items-end"
 					onClick={() => router.push("/")}
 				>
-					<h1 className="font-bold text-4xl text-black">
-						Job<span className="text-white">ly</span>
-					</h1>
+					<h1 className="font-bold text-4xl text-black">Jobly</h1>
 					<div className="text-xs">Jobs for you</div>
 				</div>
 

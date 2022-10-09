@@ -3,9 +3,9 @@ import { Comments, User, UserPreferences } from "@prisma/client";
 import { FaEllipsisH, FaFlag, FaTrash } from "react-icons/fa";
 import { useModal } from "../../hooks/useModal";
 import Modal from "../modal/Modal";
-import moment from "moment";
 import { useRouter } from "next/router";
 import { useDate } from "../../hooks/useDate";
+import { AnimatePresence } from "framer-motion";
 
 type UserWithPreferences = User & { preferences: UserPreferences | null };
 
@@ -143,21 +143,29 @@ const Comment: FC<CommentProps> = ({ commentData, author, yourData }) => {
 					</div>
 				</button>
 			</div>
-			{/* CONFIRM DELETE MODAL */}
-			<Modal
-				open={confirmDeleteOpen as boolean}
-				title="Are you sure?"
-				confirmButton="Delete"
-				confirmButtonAction={deleteComment}
-				confirmButtonColour="bg-red-500 hover:bg-red-700"
-				discardButton="Cancel"
-				discardButtonAction={toggleConfirmDelete}
-				discardButtonColour="bg-blue-500 hover:bg-blue-700"
+			<AnimatePresence
+				initial={false}
+				mode="wait"
+				onExitComplete={() => null}
 			>
-				<p className="font-bold">
-					This will permanently delete your post forever.
-				</p>
-			</Modal>
+				{confirmDeleteOpen && (
+					<Modal
+						open={confirmDeleteOpen}
+						title="Are you sure?"
+						confirmButton="Delete"
+						confirmButtonAction={deleteComment}
+						confirmButtonColour="bg-red-500 hover:bg-red-700"
+						discardButton="Cancel"
+						discardButtonAction={toggleConfirmDelete}
+						discardButtonColour="bg-blue-500 hover:bg-blue-700"
+					>
+						<p className="font-bold">
+							This will permanently delete your post forever.
+						</p>
+					</Modal>
+				)}
+			</AnimatePresence>
+			{/* CONFIRM DELETE MODAL */}
 		</div>
 	);
 };

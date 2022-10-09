@@ -73,7 +73,7 @@ const Message: FC<MessageProps> = (props) => {
 	);
 };
 
-interface MessageOptionsProps {
+interface MessageOptionsProps extends React.HTMLAttributes<HTMLDivElement> {
 	receiver: boolean;
 	message: string;
 	unsend: () => void;

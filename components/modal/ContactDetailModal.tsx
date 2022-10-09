@@ -4,8 +4,11 @@ import { User, UserPreferences, Posts, Follows } from "@prisma/client";
 import { FaEnvelope, FaPhone } from "react-icons/fa";
 import Alert from "../alert/Alert";
 import { useModal } from "../../hooks/useModal";
-import { ProfileState } from "../../reducers/profileReducer";
-import { profile } from "console";
+import {
+	ProfileState,
+	Action,
+	PROFILE_ACTION,
+} from "../../reducers/profileReducer";
 
 interface UserProfile {
 	name: string;
@@ -22,12 +25,14 @@ type ContactDetailModalProps = {
 	modalOpen: boolean;
 	toggle: () => void;
 	profileState: ProfileState;
+	dispatch: Dispatch<Action>;
 };
 
 const ContactDetailModal: FC<ContactDetailModalProps> = ({
 	modalOpen,
 	toggle,
 	profileState,
+	dispatch,
 }) => {
 	// Copy to clipboard alert
 	const [copyOpen, setCopyOpen, toggleCopy] = useModal(false);
@@ -40,28 +45,24 @@ const ContactDetailModal: FC<ContactDetailModalProps> = ({
 			confirmButtonAction={toggle}
 		>
 			<div>
-				{copyOpen && (
-					<div className="mb-5">
-						<Alert
-							level="Success"
-							message="Copied to clipboard!"
-							open={copyOpen as boolean}
-							setOpen={
-								setCopyOpen as Dispatch<SetStateAction<boolean>>
-							}
-						/>
-					</div>
-				)}
 				<div className="flex justify-start items-start gap-3">
 					<FaEnvelope className="aspect-square w-7 h-7" />
+
 					<div>
 						<h3 className="font-semibold">Email</h3>
+
 						<button
 							onClick={() => {
 								navigator.clipboard.writeText(
 									profileState.profile.email ?? ""
 								);
-								setCopyOpen(true);
+
+								dispatch({
+									type: PROFILE_ACTION.SET_SUCCESS_MESSAGE,
+									payload: {
+										successMessage: "Copied to clipboard!",
+									},
+								});
 							}}
 							className="text-blue-500 hover:underline"
 						>
@@ -69,11 +70,14 @@ const ContactDetailModal: FC<ContactDetailModalProps> = ({
 						</button>
 					</div>
 				</div>
+
 				{profileState.profile.phoneNumber && (
 					<div className="mt-4 flex justify-start items-start gap-3">
 						<FaPhone className="aspect-square w-7 h-7" />
+
 						<div>
 							<h3 className="font-semibold">Phone number</h3>
+
 							<p>
 								{profileState.profile.preferences?.PhoneType}
 								:&nbsp;
@@ -83,7 +87,13 @@ const ContactDetailModal: FC<ContactDetailModalProps> = ({
 											profileState.profile.phoneNumber ??
 												""
 										);
-										setCopyOpen(true);
+										dispatch({
+											type: PROFILE_ACTION.SET_SUCCESS_MESSAGE,
+											payload: {
+												successMessage:
+													"Copied to clipboard!",
+											},
+										});
 									}}
 									className="text-blue-500 hover:underline"
 								>

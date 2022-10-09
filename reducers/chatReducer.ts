@@ -1,17 +1,6 @@
-import { StringLike } from "@firebase/util";
 import { Chat, Participant } from "@prisma/client";
 import { Socket } from "socket.io-client";
-
-// THE TYPE OF CHATS THAT WE GET FROM /api/chats/email/[email]
-export type Chats = (Chat & {
-	Participants: (Participant & {
-		User: {
-			name: string;
-			image: string | null;
-			online: boolean;
-		};
-	})[];
-})[];
+import { AllFollows, Chats, CHAT_ACTION } from "../actions/types/chat";
 
 // THE TYPE OF RESPONSE WE GET FROM /api/follows/[email]
 export type FollowResponse = {
@@ -30,12 +19,6 @@ export type FollowResponse = {
 		};
 	}[];
 } | null;
-
-export type AllFollows = {
-	image: string | null;
-	name: string;
-	id: string;
-}[];
 
 // THE TYPE OF RESPONSE WE GET FROM /api/messages/[chatID]
 export type Message = {
@@ -58,19 +41,6 @@ export interface ChatState {
 	socket: Socket | null;
 	messages: Message[];
 	follows: AllFollows | null;
-}
-
-// the different kinds of chat actions that can be dispatched
-export enum CHAT_ACTION {
-	SELECT_CHAT_ID,
-	SET_CHATS,
-	SET_SOCKET,
-	SET_MESSAGES,
-	SET_YOUR_USERNAME,
-	SET_FOLLOWS,
-	SET_ONLINE_STATUS,
-	NEW_MESSAGE,
-	DELETE_MESSAGE,
 }
 
 // the type for the dispatch action

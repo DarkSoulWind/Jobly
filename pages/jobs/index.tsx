@@ -6,24 +6,18 @@ import Head from "next/head";
 import Navbar from "../../components/nav/Navbar";
 import Footer from "../../components/footer/Footer";
 import LoadingJobListing from "../../components/job/SkeletonLoadingJob";
+import {
+	JobListing,
+	JobSearchReducer,
+	JobSearchState,
+	JOB_SEARCH_ACTION,
+} from "../../reducers/jobReducer";
 
-interface JobListing {
-	jobTitle: string;
-	jobLocation: string;
-	jobDescription: string;
-}
-
-type JobsProps = {
+interface JobsProps {
 	search: string;
 	jobResults: {
 		results: JobListing[];
 	};
-};
-interface JobSearchState {
-	searchInput: string;
-	locationInput: string;
-	jobResults: JobListing[];
-	loading: boolean;
 }
 
 const initialState: JobSearchState = {
@@ -31,43 +25,6 @@ const initialState: JobSearchState = {
 	locationInput: "",
 	jobResults: [],
 	loading: false,
-};
-
-enum JOB_SEARCH_ACTION {
-	SET_JOB_RESULTS,
-	SET_SEARCH_INPUTS,
-	SET_LOADING,
-}
-
-interface Action {
-	type: JOB_SEARCH_ACTION;
-	payload: {
-		searchInput?: string;
-		locationInput?: string;
-		jobResults?: JobListing[];
-		loading?: boolean;
-	};
-}
-
-const JobSearchReducer = (
-	state: JobSearchState,
-	action: Action
-): JobSearchState => {
-	switch (action.type) {
-		case JOB_SEARCH_ACTION.SET_JOB_RESULTS:
-			return { ...state, jobResults: action.payload.jobResults ?? [] };
-		case JOB_SEARCH_ACTION.SET_SEARCH_INPUTS:
-			return {
-				...state,
-				searchInput: action.payload.searchInput ?? state.searchInput,
-				locationInput:
-					action.payload.locationInput ?? state.locationInput,
-			};
-		case JOB_SEARCH_ACTION.SET_LOADING:
-			return { ...state, loading: action.payload.loading ?? false };
-		default:
-			return state;
-	}
 };
 
 const Jobs: NextPage<JobsProps> = (props: JobsProps) => {
@@ -123,6 +80,7 @@ const Jobs: NextPage<JobsProps> = (props: JobsProps) => {
 			type: JOB_SEARCH_ACTION.SET_LOADING,
 			payload: { loading: true },
 		});
+
 		try {
 			router.push(
 				{
@@ -151,6 +109,7 @@ const Jobs: NextPage<JobsProps> = (props: JobsProps) => {
 		} catch (error) {
 			console.error(error);
 		}
+
 		dispatch({
 			type: JOB_SEARCH_ACTION.SET_LOADING,
 			payload: { loading: false },
@@ -234,8 +193,9 @@ const Jobs: NextPage<JobsProps> = (props: JobsProps) => {
 				</form>
 
 				{router.query.search ? (
-					<div className="px-6 py-5 flex justify-center items-start gap-5">
+					<div className="w-4/5 relative px-6 py-5 flex justify-center items-start gap-5">
 						{/* FILTERS */}
+						{/* fixed top-[10.4rem] left-[5rem] */}
 						<aside className="px-5 border-[1px] flex flex-col divide-y-2 border-slate-300 bg-white rounded-lg">
 							{/* DISTANCE FILTERS */}
 							<div className="w-[15rem] py-5 flex flex-col items-start gap-3">
@@ -277,7 +237,7 @@ const Jobs: NextPage<JobsProps> = (props: JobsProps) => {
 						</aside>
 
 						{/* JOB RESULTS */}
-						<main>
+						<main className="w-full h-full ">
 							{jobSearchState.jobResults &&
 							jobSearchState.jobResults.length > 0 ? (
 								// SHOW SKELETON JOB RESULTS WHEN LOADING
@@ -293,7 +253,7 @@ const Jobs: NextPage<JobsProps> = (props: JobsProps) => {
 											(job, index) => (
 												<div
 													key={index}
-													className="p-5 border-[1px] border-slate-300 bg-white w-80 rounded-lg"
+													className="p-5 border-[1px] border-slate-300 bg-white w-full rounded-lg"
 												>
 													<p className="font-bold">
 														{job.jobTitle}
@@ -306,11 +266,16 @@ const Jobs: NextPage<JobsProps> = (props: JobsProps) => {
 									</div>
 								)
 							) : (
-								<div>No jobs</div>
+								<div className="text-center h-full  text-black">
+									<p className="text-4xl font-bold">
+										No jobs available
+									</p>
+								</div>
 							)}
 						</main>
 					</div>
 				) : (
+					// SHOW POPULAR SEARCHES IF SEARCH ISNT SPECIFIED
 					<div className="py-10 text-center space-y-4 max-w-[50rem]">
 						<p className="font-semibold text-lg">
 							Popular searches
@@ -338,12 +303,16 @@ const Jobs: NextPage<JobsProps> = (props: JobsProps) => {
 										});
 										router.push({
 											pathname: "/jobs",
-											query: { search: job },
+											query: {
+												search: job,
+												location: "",
+											},
 										});
 									}}
 									key={index}
 								>
 									<FaSearch className="fill-slate-600" />
+
 									<p>{job}</p>
 								</button>
 							))}
@@ -357,6 +326,7 @@ const Jobs: NextPage<JobsProps> = (props: JobsProps) => {
 	);
 };
 
+// SERVER SIDE RENDER PAGE BASED ON SEARCH AND LOCATION QUERY
 export async function getServerSideProps(context: GetServerSidePropsContext) {
 	const search = (context.query.search as string) ?? "";
 	const location = (context.query.location as string) ?? "";

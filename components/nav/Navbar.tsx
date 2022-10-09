@@ -130,9 +130,7 @@ const Navbar: FC<NavbarProps> = (props) => {
 									}}
 								/>
 								<div className="overflow-ellipsis overflow-hidden whitespace-nowrap">
-									<h3>
-										{data.user?.name} dsdkla asdlkj asdlkj
-									</h3>
+									<h3>{data.user?.name}</h3>
 									<p>--</p>
 								</div>
 							</div>
@@ -146,7 +144,16 @@ const Navbar: FC<NavbarProps> = (props) => {
 									View profile
 								</button>
 							</div>
-							<div className="border-t-[1px] mt-3 p-2 border-slate-300 flex flex-col items-start justify-start">
+							<div className="border-t-[1px] mt-3 p-2 border-slate-300 flex flex-col gap-1 items-start justify-start">
+								<button
+									onClick={() => {
+										router.push("/jobs/saved");
+									}}
+									className="text-sm text-left font-normal hover:underline text-slate-700"
+								>
+									Saved jobs
+								</button>
+
 								<button
 									onClick={() => {
 										signOut({

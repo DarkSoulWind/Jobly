@@ -11,13 +11,19 @@ import ChatSection from "../../components/chat/ChatSection";
 import {
 	ChatState,
 	chatReducer,
-	CHAT_ACTION,
-	Chats,
 	FollowResponse,
-	AllFollows,
 } from "../../reducers/chatReducer";
 import { useModal } from "../../hooks/useModal";
 import { AnimatePresence } from "framer-motion";
+import {
+	selectChatID,
+	setChats,
+	setFollows,
+	setOnlineStatus,
+	setSocket,
+	setYourUsername,
+} from "../../actions";
+import { Chats, AllFollows } from "../../actions/types/chat";
 
 // GLOBAL STATE FOR THIS PAGE
 const initialChatState: ChatState = {
@@ -36,7 +42,7 @@ const DirectMessagesPage: NextPage = () => {
 	const [chatState, dispatch] = useReducer(chatReducer, initialChatState);
 	const [newChatOpen, setNewChatOpen, toggleNewChatOpen] = useModal(false);
 
-	// RUNS ONCE WHEN THE COMPONENT IS MOUNTED
+	// RUNS ONCE WHEN THE PAGE LOADS
 	// retrieves all chats that the user has participants in
 	useEffect(() => {
 		const getChatsByEmail = async () => {
@@ -52,24 +58,21 @@ const DirectMessagesPage: NextPage = () => {
 
 				// if the page has a chat query then select that chat id
 				if (router.query.chat !== "") {
-					dispatch({
-						type: CHAT_ACTION.SELECT_CHAT_ID,
-						payload: {
+					dispatch(
+						selectChatID({
 							chatID: router.query.chat as string,
 							yourUsername: data?.user?.name as string,
-						},
-					});
+						})
+					);
 				}
 
 				// set the chats to the response data if successful and set the username
-				dispatch({
-					type: CHAT_ACTION.SET_CHATS,
-					payload: { chats: responseData },
-				});
-				dispatch({
-					type: CHAT_ACTION.SET_YOUR_USERNAME,
-					payload: { yourUsername: data?.user?.name ?? "" },
-				});
+				dispatch(setChats({ chats: responseData }));
+				dispatch(
+					setYourUsername({
+						yourUsername: data?.user?.name as string,
+					})
+				);
 			} catch (error) {
 				console.error(error);
 			}
@@ -92,10 +95,7 @@ const DirectMessagesPage: NextPage = () => {
 							(follow) => follow.following
 						) as AllFollows),
 					];
-					dispatch({
-						type: CHAT_ACTION.SET_FOLLOWS,
-						payload: { follows },
-					});
+					dispatch(setFollows({ follows }));
 					console.log(
 						"GOT THE FOLLOWERS AND FOLLOWING",
 						JSON.stringify(follows, null, 4)
@@ -111,10 +111,7 @@ const DirectMessagesPage: NextPage = () => {
 
 		// setup a new socket connection and set that as the socket
 		const newSocket = io("http://localhost:4000");
-		dispatch({
-			type: CHAT_ACTION.SET_SOCKET,
-			payload: { socket: newSocket },
-		});
+		dispatch(setSocket({ socket: newSocket }));
 
 		// update online status when connected
 		newSocket.emit("connected", data?.user?.email);
@@ -123,10 +120,12 @@ const DirectMessagesPage: NextPage = () => {
 		newSocket.on(
 			"updated online status",
 			({ name, status }: { name: string; status: boolean }) => {
-				dispatch({
-					type: CHAT_ACTION.SET_ONLINE_STATUS,
-					payload: { username: name, onlineStatus: status },
-				});
+				dispatch(
+					setOnlineStatus({
+						username: name,
+						onlineStatus: status,
+					})
+				);
 			}
 		);
 
@@ -138,13 +137,16 @@ const DirectMessagesPage: NextPage = () => {
 	}, [data]);
 
 	return (
-		<div>
+		<>
 			<Head>
 				<title>Direct • Jobly</title>
 				<meta name="description" content="Your direct messages." />
 			</Head>
+
 			<Navbar />
+
 			<div className="background"></div>
+
 			<div className="pt-[4.5rem] pb-5 h-screen flex justify-center">
 				{/* MAIN CHAT BOX */}
 				<main className="w-[60rem] max-h-[55rem] min-h-[20rem] mx-5 flex justify-start items-start overflow-clip bg-white border-[1px] border-slate-300 rounded-lg">
@@ -185,17 +187,12 @@ const DirectMessagesPage: NextPage = () => {
 													chat: chat.ChatID,
 												},
 											});
-											dispatch({
-												type: CHAT_ACTION.SELECT_CHAT_ID,
-												payload: {
+											dispatch(
+												selectChatID({
 													chatID: chat.ChatID,
 													yourUsername: data?.user
 														?.name as string,
-												},
-											});
-											console.log(
-												"selected chat id",
-												chatState.selectedChatID
+												})
 											);
 										}}
 										className={`w-full flex justify-start hover:bg-indigo-100 transition-all cursor-pointer items-center gap-3 py-2 px-3 ${
@@ -274,11 +271,13 @@ const DirectMessagesPage: NextPage = () => {
 								</p>
 							</div>
 						) : (
-							// else show the chat
-							<ChatSection
-								chatState={chatState}
-								dispatch={dispatch}
-							/>
+							<div className="h-full ">
+								{/* else show the chat */}
+								<ChatSection
+									chatState={chatState}
+									dispatch={dispatch}
+								/>
+							</div>
 						)}
 					</div>
 				</main>
@@ -328,6 +327,7 @@ const DirectMessagesPage: NextPage = () => {
 													}}
 													alt="PFP"
 												/>
+
 												<div className="block -space-y-1 text-sm">
 													<p className="font-bold">
 														{follow.name}
@@ -335,6 +335,7 @@ const DirectMessagesPage: NextPage = () => {
 													<p>hi</p>
 												</div>
 											</div>
+
 											<input
 												type="radio"
 												className="w-5 h-5"
@@ -347,7 +348,7 @@ const DirectMessagesPage: NextPage = () => {
 					</Modal>
 				)}
 			</AnimatePresence>
-		</div>
+		</>
 	);
 };
 

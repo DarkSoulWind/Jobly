@@ -15,6 +15,10 @@ export default async function handler(
 		await prisma.follows
 			.delete({
 				where: { followerId_followingId: { followerId, followingId } },
+				select: {
+					followerId: true,
+					follower: true,
+				},
 			})
 			.then((response) => {
 				console.log(

@@ -7,12 +7,8 @@ import React, {
 	Dispatch,
 } from "react";
 import MessageComponent from "./Message";
-import {
-	ChatState,
-	Message,
-	Action,
-	CHAT_ACTION,
-} from "../../reducers/chatReducer";
+import { ChatState, Message, Action } from "../../reducers/chatReducer";
+import { CHAT_ACTION } from "../../actions/types/chat";
 import { useRouter } from "next/router";
 
 interface ChatSectionProps {
@@ -124,29 +120,28 @@ const ChatSection: FC<ChatSectionProps> = ({ chatState, dispatch }) => {
 	};
 
 	return (
-		<div className="w-full max-h-[55rem] flex flex-col relative">
-			<div className="min-h-fit h-full flex flex-col px-3 gap-2 overflow-y-scroll">
+		<div className="w-full h-full flex flex-col relative">
+			<div className="max-h-[46rem] h-full flex flex-col justify-start px-3 gap-2 overflow-y-scroll">
 				{/* push all the messages to the bottom */}
 				<div className="mt-auto"></div>
 
 				{/* ALL THE MESSAGES */}
 				{chatState.messages.map((message, index) => (
-					<div key={message.MessageID}>
-						<MessageComponent
-							id={message.MessageID}
-							message={message.Text}
-							receiver={
-								chatState.yourUsername === message.Sender.name
-							}
-							continuing={
-								message.Sender.name ===
-								chatState.messages[index - 1]?.Sender.name
-							}
-							chatState={chatState}
-							pfp={message.Sender.image as string}
-							datePosted={message.DatePosted}
-						/>
-					</div>
+					<MessageComponent
+						key={message.MessageID}
+						id={message.MessageID}
+						message={message.Text}
+						receiver={
+							chatState.yourUsername === message.Sender.name
+						}
+						continuing={
+							message.Sender.name ===
+							chatState.messages[index - 1]?.Sender.name
+						}
+						chatState={chatState}
+						pfp={message.Sender.image as string}
+						datePosted={message.DatePosted}
+					/>
 				))}
 
 				{/* dummy to scroll to the bottom when you post a new message */}
@@ -154,7 +149,10 @@ const ChatSection: FC<ChatSectionProps> = ({ chatState, dispatch }) => {
 			</div>
 
 			{/* input box to enter messages */}
-			<form onSubmit={sendMessage} className="w-full h-[7rem] px-3 pt-2">
+			<form
+				onSubmit={sendMessage}
+				className="fixed bottom-[1.4rem] w-[40rem] rounded-br-lg bg-indigo-400 px-3 py-2"
+			>
 				<input
 					className="w-full border-[1px] border-slate-300 rounded-full py-2 px-4 text-sm"
 					type="text"

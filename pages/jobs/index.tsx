@@ -7,11 +7,11 @@ import Navbar from "../../components/nav/Navbar";
 import Footer from "../../components/footer/Footer";
 import LoadingJobListing from "../../components/job/SkeletonLoadingJob";
 import {
-	JobListing,
 	JobSearchReducer,
 	JobSearchState,
 	JOB_SEARCH_ACTION,
 } from "../../reducers/jobReducer";
+import { JobListing } from "../../lib/scraper/scraper";
 
 interface JobsProps {
 	search: string;
@@ -91,11 +91,11 @@ const Jobs: NextPage<JobsProps> = (props: JobsProps) => {
 				{ shallow: true }
 			);
 			const response = await fetch(
-				`http://localhost:3000/api/jobs/reed?search=${jobSearchState.searchInput
+				`http://localhost:3000/api/jobs?search=${jobSearchState.searchInput
 					.split(" ")
-					.join("+")}&where=${jobSearchState.locationInput
+					.join("%20")}&location=${jobSearchState.locationInput
 					.split(" ")
-					.join("+")}`
+					.join("%20")}`
 			);
 			const data: { results: JobListing[] } = await response.json();
 
@@ -256,10 +256,10 @@ const Jobs: NextPage<JobsProps> = (props: JobsProps) => {
 													className="p-5 border-[1px] border-slate-300 bg-white w-full rounded-lg"
 												>
 													<p className="font-bold">
-														{job.jobTitle}
+														{job.title}
 													</p>
-													<p>{job.jobLocation}</p>
-													<p>{job.jobDescription}</p>
+													<p>{job.location}</p>
+													<p>{job.description}</p>
 												</article>
 											)
 										)}
@@ -332,7 +332,7 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
 	const location = (context.query.location as string) ?? "";
 	console.log(search, location);
 	if (search === "") return { props: { search, jobResults: [] } };
-	const URL = `http://localhost:3000/api/jobs/reed?search=${search
+	const URL = `http://localhost:3000/api/jobs?search=${search
 		.split(" ")
 		.join("%20")}&location=${location.split(" ").join("%20")}`;
 	const response = await fetch(URL);

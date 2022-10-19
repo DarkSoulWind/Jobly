@@ -1,8 +1,4 @@
-export interface JobListing {
-	jobTitle: string;
-	jobLocation: string;
-	jobDescription: string;
-}
+import { JobListing } from "../lib/scraper/scraper";
 
 export interface JobSearchState {
 	searchInput: string;

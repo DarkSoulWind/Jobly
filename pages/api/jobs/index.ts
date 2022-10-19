@@ -1,43 +1,23 @@
 // Next.js API route support: https://nextjs.org/docs/api-routes/introduction
 import type { NextApiRequest, NextApiResponse } from "next";
-import cheerio from "cheerio";
-import axios from "axios";
+import type { JobListing } from "../../../lib/scraper/scraper";
+import ReedScraper from "../../../lib/scraper/reedScraper";
 
-interface JobListing {
-	jobTitle: string;
-	jobLocation: string;
-	jobDescription: string[];
+interface Results {
+	results: JobListing[];
 }
 
-type Data = {
-	results: JobListing[];
-};
-
-export default function handler(
+export default async function handler(
 	req: NextApiRequest,
-	res: NextApiResponse<Data>
+	res: NextApiResponse<Results>
 ) {
-	const search = (req.query.search as string) || "software engineer";
-	const URL = `https://uk.indeed.com/jobs?q=${search.split(" ").join("+")}`;
-	console.log(URL);
+	const { search = "software engineer", location = "london" } = req.query as {
+		search: string;
+		location: string;
+	};
+	const reedResults = new ReedScraper(search, location);
+	await reedResults.scrape();
+	console.log(reedResults.results);
 
-	axios.get(URL).then((response) => {
-		const html = response.data;
-		const $ = cheerio.load(html);
-		const things: Data = { results: [] };
-
-		$(".slider_item", html).each(function (this: cheerio.Element) {
-			const jobTitle = $(this).find(".jcs-JobTitle").text().trim();
-			const jobLocation = $(this).find(".company_location").text().trim();
-			const jobSnippetEl = $(this).find(".job-snippet").find("ul");
-			let jobDescription: any[] = [];
-			$(jobSnippetEl)
-				.children()
-				.each(function (this: cheerio.Element) {
-					jobDescription.push($(this).text().trim());
-				});
-			things.results.push({ jobTitle, jobLocation, jobDescription });
-		});
-		res.json(things);
-	});
+	res.json({ results: reedResults.results });
 }

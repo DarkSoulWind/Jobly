@@ -21,6 +21,9 @@ const FollowersModal: FC<FollowersModalProps> = ({
 			title="Followers"
 		>
 			<div className="space-y-2">
+				{profileState.profile.followers.length === 0 && (
+					<p>No followers</p>
+				)}
 				{profileState.profile.followers.map(
 					({ follower, followerId }) => (
 						<div

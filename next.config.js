@@ -2,9 +2,9 @@
 const nextConfig = {
 	reactStrictMode: true,
 	swcMinify: true,
-	experimental: {
-		concurrentFeatures: true,
-		serverComponents: true,
+	experimental: {},
+	images: {
+		domains: ["lh3.googleusercontent.com"],
 	},
 };
 

@@ -91,7 +91,7 @@ const Jobs: NextPage<JobsProps> = (props: JobsProps) => {
 				{ shallow: true }
 			);
 			const response = await fetch(
-				`http://localhost:3000/api/jobs/studentjob?search=${jobSearchState.searchInput
+				`http://localhost:3000/api/jobs/reed?search=${jobSearchState.searchInput
 					.split(" ")
 					.join("+")}&where=${jobSearchState.locationInput
 					.split(" ")
@@ -251,7 +251,7 @@ const Jobs: NextPage<JobsProps> = (props: JobsProps) => {
 									<div className="w-full flex flex-col items-start gap-5">
 										{jobSearchState.jobResults.map(
 											(job, index) => (
-												<div
+												<article
 													key={index}
 													className="p-5 border-[1px] border-slate-300 bg-white w-full rounded-lg"
 												>
@@ -260,7 +260,7 @@ const Jobs: NextPage<JobsProps> = (props: JobsProps) => {
 													</p>
 													<p>{job.jobLocation}</p>
 													<p>{job.jobDescription}</p>
-												</div>
+												</article>
 											)
 										)}
 									</div>
@@ -332,9 +332,9 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
 	const location = (context.query.location as string) ?? "";
 	console.log(search, location);
 	if (search === "") return { props: { search, jobResults: [] } };
-	const URL = `http://localhost:3000/api/jobs/studentjob?search=${search
+	const URL = `http://localhost:3000/api/jobs/reed?search=${search
 		.split(" ")
-		.join("+")}&location=${location.split(" ").join("+")}`;
+		.join("%20")}&location=${location.split(" ").join("%20")}`;
 	const response = await fetch(URL);
 	const jobResults = await response.json();
 	return { props: { search, jobResults } };

@@ -120,48 +120,75 @@ const ChatSection: FC<ChatSectionProps> = ({ chatState, dispatch }) => {
 	};
 
 	return (
-		<div className="w-full h-full flex flex-col relative">
-			<div className="max-h-[46rem] h-full flex flex-col justify-start px-3 gap-2 overflow-y-scroll">
-				{/* push all the messages to the bottom */}
-				<div className="mt-auto"></div>
+		<>
+			<div className="w-full h-full max-h-[48rem] flex flex-col relative">
+				<div className="h-full flex flex-col justify-start px-3 py-3 overflow-y-scroll">
+					{/* push all the messages to the bottom */}
+					<div className="mt-auto"></div>
 
-				{/* ALL THE MESSAGES */}
-				{chatState.messages.map((message, index) => (
-					<MessageComponent
-						key={message.MessageID}
-						id={message.MessageID}
-						message={message.Text}
-						receiver={
-							chatState.yourUsername === message.Sender.name
-						}
-						continuing={
-							message.Sender.name ===
-							chatState.messages[index - 1]?.Sender.name
-						}
-						chatState={chatState}
-						pfp={message.Sender.image as string}
-						datePosted={message.DatePosted}
-					/>
-				))}
+					{/* ALL THE MESSAGES */}
+					<div className="flex flex-col gap-2">
+						{chatState.messages.map((message, index) => {
+							console.log(message.DatePosted);
+							return (
+								<>
+									{/* check if the dates are different, and separate them messages if they are */}
+									{new Date(message.DatePosted).getDate() !==
+										new Date(
+											chatState.messages[
+												index - 1
+											]?.DatePosted
+										)?.getDate() && (
+										<div className="w-full py-4 text-indigo-800 flex justify-center items-center">
+											<p className="text-xs">
+												{new Date(
+													message.DatePosted
+												).toLocaleDateString()}
+											</p>
+										</div>
+									)}
 
-				{/* dummy to scroll to the bottom when you post a new message */}
-				<div ref={scrollDummy}></div>
+									<MessageComponent
+										key={message.MessageID}
+										id={message.MessageID}
+										message={message.Text}
+										receiver={
+											chatState.yourUsername ===
+											message.Sender.name
+										}
+										// check to see if the author of the message is the same as the previous message
+										continuing={
+											message.Sender.name ===
+											chatState.messages[index - 1]
+												?.Sender.name
+										}
+										chatState={chatState}
+										pfp={message.Sender.image as string}
+										datePosted={message.DatePosted}
+									/>
+								</>
+							);
+						})}
+					</div>
+					{/* dummy to scroll to the bottom when you post a new message */}
+					<div ref={scrollDummy}></div>
+				</div>
+
+				{/* input box to enter messages */}
 			</div>
-
-			{/* input box to enter messages */}
 			<form
 				onSubmit={sendMessage}
-				className="fixed bottom-[1.4rem] w-[40rem] rounded-br-lg bg-indigo-400 px-3 py-2"
+				className="w-full h-full rounded-br-lg bg-indigo-400 px-3 py-2"
 			>
 				<input
-					className="w-full border-[1px] border-slate-300 rounded-full py-2 px-4 text-sm"
+					className="w-full h-fit border-[1px] border-slate-300 rounded-full py-2 px-4 text-sm"
 					type="text"
 					placeholder="Message..."
 					value={textInput}
 					onChange={(e) => setTextInput(e.target.value)}
 				/>
 			</form>
-		</div>
+		</>
 	);
 };
 

@@ -1,4 +1,5 @@
 import { useRouter } from "next/router";
+import Link from "next/link";
 import React from "react";
 import Navbar from "../components/nav/Navbar";
 
@@ -24,12 +25,11 @@ const PageNotFound = () => {
 							</p>
 						</div>
 					</div>
-					<button
-						onClick={() => router.back()}
-						className="text-xl hover:text-indigo-500"
-					>
-						Go back
-					</button>
+					<Link href={"/"}>
+						<a className="text-xl hover:text-indigo-500">
+							Return home
+						</a>
+					</Link>
 				</div>
 			</div>
 			<div className="background"></div>

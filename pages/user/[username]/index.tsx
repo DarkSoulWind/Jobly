@@ -1,3 +1,5 @@
+"PROFILE PAGE";
+
 import type { NextPage, GetStaticPropsContext } from "next";
 import React, { useState, useEffect, useReducer } from "react";
 import { v4 as uuid } from "uuid";
@@ -15,7 +17,6 @@ import {
 	UserPreferences,
 	Posts,
 	Follows,
-	Interests,
 } from "@prisma/client";
 import {
 	UserProfile,
@@ -26,8 +27,7 @@ import {
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/router";
 import { useDate } from "../../../hooks/useDate";
-import { AnimatePresence, motion, Variants } from "framer-motion";
-import Modal from "../../../components/modal/Modal";
+import { AnimatePresence, motion } from "framer-motion";
 import Alert from "../../../components/alert/Alert";
 import FollowersModal from "../../../components/modal/FollowersModal";
 
@@ -451,10 +451,18 @@ const UserProfile: NextPage<UserProfileProps> = ({ profile }) => {
 
 					<div className="mt-2 flex flex-col items-start divide-y-[1px] gap-3 w-full">
 						{activities.map((activity) => {
-							// determine if it is post or comment
-							const type = (activity as Comments).CommentID
-								? "comment"
-								: "post";
+							function isPost(
+								activity:
+									| Posts
+									| (Comments & {
+											Post: Posts;
+									  })
+							): activity is Posts {
+								return (
+									(activity as Posts).PostText !== undefined
+								);
+							}
+
 							return (
 								<div
 									onClick={() =>
@@ -466,21 +474,15 @@ const UserProfile: NextPage<UserProfileProps> = ({ profile }) => {
 										<span className="font-semibold">
 											{profileState.profile.name}
 										</span>{" "}
-										{type === "comment"
+										{!isPost(activity)
 											? "commented"
 											: "posted"}{" "}
 										this{" "}
-										{type === "comment" ? (
+										{!isPost(activity) ? (
 											<span>
 												on{" "}
 												<span className="font-semibold">
-													{
-														(
-															activity as Comments & {
-																Post: Posts;
-															}
-														).Post.PostText
-													}
+													{activity.Post.PostText}
 												</span>
 											</span>
 										) : (
@@ -489,7 +491,7 @@ const UserProfile: NextPage<UserProfileProps> = ({ profile }) => {
 										• {useDate(activity.DatePosted, true)}
 									</p>
 									<div className="pt-1 flex justify-start items-start gap-3">
-										{type === "post" &&
+										{isPost(activity) &&
 											(activity as Posts).Image && (
 												<img
 													src={
@@ -504,10 +506,9 @@ const UserProfile: NextPage<UserProfileProps> = ({ profile }) => {
 												/>
 											)}
 										<p>
-											{type === "comment"
-												? (activity as Comments)
-														.CommentText
-												: (activity as Posts).PostText}
+											{!isPost(activity)
+												? activity.CommentText
+												: activity.PostText}
 										</p>
 									</div>
 								</div>

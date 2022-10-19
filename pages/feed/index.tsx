@@ -6,6 +6,7 @@ import Navbar from "../../components/nav/Navbar";
 import Footer from "../../components/footer/Footer";
 import LookingForJob from "../../public/images/LookingForJob.png";
 import { useModal } from "../../hooks/useModal";
+import { useQuery } from "react-query";
 import CreatePostModal from "../../components/modal/CreatePostModal";
 import { User } from "@prisma/client";
 import {
@@ -38,68 +39,60 @@ const Feed: NextPage = () => {
 	// GLOBAL FEED STATE
 	const [feedState, dispatch] = useReducer(feedReducer, {}, initFeedState);
 
-	// STORES YOUR USER DATA
-	const [yourData, setYourData] = useState<UserWithPreferences | null>();
-
 	// MODALS OR POPUPS
 	const [lookingForAJob, setLookingForAJob] = useState(false);
 	const [createPostModalOpen, setCreatePostModalOpen, toggleCreatePostModal] =
 		useModal(false);
 
+	const getUserByEmail = async () => {
+		const response = await fetch(
+			`http://localhost:3000/api/user/email/${data?.user?.email}`
+		);
+		const responseData: UserWithPreferences | null = await response.json();
+		return responseData;
+	};
+
+	const getRecommendedPosts = async () => {
+		const response = await fetch(
+			`http://localhost:3000/api/feed/recommend/${data?.user?.email}`
+		);
+		const responseData: PostsUserPostLikesComments[] | null =
+			await response.json();
+		return responseData;
+	};
+
+	// FETCH YOUR USER DATA
+	const {
+		data: yourData,
+		isError: yourDataFetchError,
+		isLoading: yourDataFetchLoading,
+	} = useQuery("yourData", getUserByEmail);
+
+	// FETCH RECOMMENDED POSTS
+	const {
+		data: posts,
+		isError: postsFetchError,
+		isLoading: postsFetchLoading,
+	} = useQuery("posts", getRecommendedPosts);
+
 	// RUNS ONCE WHEN THE PAGE IS MOUNTED
 	useEffect(() => {
-		const abortController = new AbortController();
-
 		setLookingForAJob(
 			JSON.parse(localStorage.getItem("lookingForAJob") ?? "true")
 		);
-
-		// get your user data
-		const getUserByEmail = async () => {
-			const response = await fetch(
-				`http://localhost:3000/api/user/email/${data?.user?.email}`,
-				{ signal: abortController.signal }
-			);
-			const responseData: UserWithPreferences | null =
-				await response.json();
-			setYourData(responseData);
-		};
-
-		// fetch posts recommended to you
-		const getRecommendedPosts = async () => {
-			const response = await fetch(
-				`http://localhost:3000/api/feed/recommend/${data?.user?.email}`,
-				{ signal: abortController.signal }
-			);
-			const responseData: PostsUserPostLikesComments[] | null =
-				await response.json();
-			dispatch({
-				type: FEED_ACTION.SET_POSTS,
-				payload: {
-					posts: responseData as PostsUserPostLikesComments[],
-				},
-			});
-		};
-
-		getUserByEmail();
-		setTimeout(getRecommendedPosts, 1000);
-		// getRecommendedPosts();
-
-		return () => {
-			setTimeout(() => {
-				abortController.abort();
-			}, 2000);
-		};
 	}, []);
 
 	return (
-		<div className="overflow-clip">
+		<>
 			<Head>
 				<title>Feed • Jobly</title>
 				<meta name="description" content="User feed" />
 			</Head>
+
 			<Navbar />
+
 			<div className="background"></div>
+
 			<div className="w-full flex flex-col items-center pt-14">
 				<div
 					className={`${
@@ -111,8 +104,10 @@ const Feed: NextPage = () => {
 						<div className="fixed w-[15rem] overflow-clip grid grid-cols-1 bg-white border-[1px] border-slate-300 rounded-lg">
 							<img
 								src={
-									yourData?.preferences?.Banner ??
-									"https://swall.teahub.io/photos/small/303-3034192_default-banner-banner-jpg.jpg"
+									yourDataFetchError || yourDataFetchLoading
+										? "https://swall.teahub.io/photos/small/303-3034192_default-banner-banner-jpg.jpg"
+										: yourData?.preferences?.Banner ??
+										  "https://swall.teahub.io/photos/small/303-3034192_default-banner-banner-jpg.jpg"
 								}
 								alt="banner"
 							/>
@@ -144,6 +139,16 @@ const Feed: NextPage = () => {
 								</div>
 								<div className="pt-9 pb-4 text-center">
 									<h3 className="font-bold text-md">
+										{yourDataFetchLoading && (
+											<h3 className="font-bold text-md">
+												Loading...
+											</h3>
+										)}
+										{yourDataFetchError && (
+											<h3 className="font-bold text-md">
+												Error fetching profile
+											</h3>
+										)}
 										{yourData?.preferences?.FirstName ??
 											yourData?.name}{" "}
 										{yourData?.preferences?.LastName ?? ""}
@@ -232,9 +237,7 @@ const Feed: NextPage = () => {
 									}}
 								/>
 								<button
-									onClick={
-										toggleCreatePostModal as () => void
-									}
+									onClick={toggleCreatePostModal}
 									className="font-light text-slate-600 bg-slate-200/70 hover:bg-slate-200 transition-all rounded-full w-full text-left px-4 py-[0.85rem]"
 								>
 									Start a post
@@ -244,30 +247,25 @@ const Feed: NextPage = () => {
 
 						{/* SHOW POSTS */}
 						<div className="flex flex-col w-full gap-2">
-							{feedState.posts ? (
-								<div className="flex flex-col items-center gap-2">
-									{feedState?.posts?.map((post) => (
-										<div
-											className="w-full"
-											key={post.PostID}
-										>
-											<PostComponent
-												postData={post}
-												yourData={
-													yourData as UserWithPreferences
-												}
-												pageExpanded={false}
-												dispatch={dispatch}
-											/>
-										</div>
-									))}
-									<p className="mt-6 text-2xl font-semibold">
-										All caught up!
-									</p>
-								</div>
-							) : (
-								[1, 2, 3].map(() => <SkeletonLoaderPost />)
-							)}
+							{postsFetchLoading &&
+								[1, 2, 3].map(() => <SkeletonLoaderPost />)}
+
+							{postsFetchError && <p>Error loading posts.</p>}
+
+							<div className="flex flex-col items-center gap-2">
+								{posts?.map((post) => (
+									<div className="w-full" key={post.PostID}>
+										<PostComponent
+											postData={post}
+											yourData={
+												yourData as UserWithPreferences
+											}
+											pageExpanded={false}
+											dispatch={dispatch}
+										/>
+									</div>
+								))}
+							</div>
 						</div>
 					</div>
 				</div>
@@ -323,7 +321,7 @@ const Feed: NextPage = () => {
 			</AnimatePresence>
 
 			<Footer />
-		</div>
+		</>
 	);
 };
 

@@ -1,5 +1,6 @@
 import React, { FC, useState } from "react";
 import { useRouter } from "next/router";
+import Link from "next/link";
 import { signOut, useSession } from "next-auth/react";
 import { FaComment, FaSearch, FaSuitcase, FaUsers } from "react-icons/fa";
 
@@ -15,16 +16,13 @@ const Navbar: FC<NavbarProps> = (props) => {
 	return (
 		<nav className="w-full bg-slate-50 shadow-gray-300/50 shadow-md fixed py-1 px-4 z-10 flex justify-between items-center">
 			<div className="flex justify-start items-center gap-2">
-				<header
-					className="flex py-1 justify-start cursor-pointer items-end"
-					onClick={() =>
-						router.push(status === "authenticated" ? "/feed" : "/")
-					}
-				>
-					<h1 className="font-bold text-4xl text-black">Jobly</h1>
+				<header className="flex py-1 justify-start cursor-pointer items-end">
+					<Link href={status === "authenticated" ? "/feed" : "/"}>
+						<h1 className="font-bold text-4xl text-black">Jobly</h1>
+					</Link>
 				</header>
 
-				{/* SEARCH BAR */}
+				{/* show search bar only if authenticated */}
 				{status === "authenticated" && (
 					<form
 						autoCorrect="off"
@@ -135,26 +133,23 @@ const Navbar: FC<NavbarProps> = (props) => {
 								</div>
 							</div>
 							<div className="px-2">
-								<button
+								<p
 									onClick={() =>
 										router.push(`/user/${data.user?.name}`)
 									}
 									className="w-full mt-2 text-sm text-semibold text-blue-500 border-2 hover:bg-blue-100 transition-all border-blue-500 rounded-full"
 								>
 									View profile
-								</button>
+								</p>
 							</div>
 							<div className="border-t-[1px] mt-3 p-2 border-slate-300 flex flex-col gap-1 items-start justify-start">
-								<button
-									onClick={() => {
-										router.push("/jobs/saved");
-									}}
-									className="text-sm text-left font-normal hover:underline text-slate-700"
-								>
-									Saved jobs
-								</button>
+								<Link href={"/jobs/saved"}>
+									<a className="text-sm text-left font-normal hover:underline text-slate-700">
+										Saved jobs
+									</a>
+								</Link>
 
-								<button
+								<p
 									onClick={() => {
 										signOut({
 											callbackUrl:
@@ -164,12 +159,13 @@ const Navbar: FC<NavbarProps> = (props) => {
 									className="text-sm text-left font-normal hover:underline text-slate-700"
 								>
 									Sign out
-								</button>
+								</p>
 							</div>
 						</div>
 					</button>
 				</div>
 			)}
+
 			{status === "unauthenticated" && (
 				<div className="flex justify-end items-center gap-5">
 					<button

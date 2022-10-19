@@ -7,9 +7,11 @@ import Navbar from "../components/nav/Navbar";
 import HomeBackground from "../public/images/HomeBackground.jpeg";
 import Image from "next/image";
 import { FaSearch } from "react-icons/fa";
+import { useSession } from "next-auth/react";
 
 const Home: NextPage = () => {
 	const router = useRouter();
+	const { status } = useSession();
 	const searchRef = useRef<HTMLInputElement>(null);
 
 	const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
@@ -18,6 +20,10 @@ const Home: NextPage = () => {
 		const URL = `/jobs?search=${searchQuery}`;
 		router.push(URL);
 	};
+
+	if (status === "authenticated") {
+		router.push("/feed");
+	}
 
 	return (
 		<>

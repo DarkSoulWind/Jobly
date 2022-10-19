@@ -7,6 +7,7 @@ import { FaPaperPlane, FaPenSquare } from "react-icons/fa";
 import { useRouter } from "next/router";
 import { useSession } from "next-auth/react";
 import io from "socket.io-client";
+import { useQuery } from "react-query";
 import ChatSection from "../../components/chat/ChatSection";
 import {
 	ChatState,
@@ -24,6 +25,7 @@ import {
 	setYourUsername,
 } from "../../actions";
 import { Chats, AllFollows } from "../../actions/types/chat";
+import Link from "next/link";
 
 // GLOBAL STATE FOR THIS PAGE
 const initialChatState: ChatState = {
@@ -42,42 +44,46 @@ const DirectMessagesPage: NextPage = () => {
 	const [chatState, dispatch] = useReducer(chatReducer, initialChatState);
 	const [newChatOpen, setNewChatOpen, toggleNewChatOpen] = useModal(false);
 
+	const getChatsByEmail = async () => {
+		const response = await fetch(
+			`http://localhost:3000/api/chats/email/${data?.user?.email}`
+		);
+		const responseData: Chats = await response.json();
+
+		if (!response.ok) {
+			throw new Error(JSON.stringify(responseData, null, 4));
+		}
+
+		// if the page has a chat query then select that chat id
+		if (router.query.chat !== "") {
+			dispatch(
+				selectChatID({
+					chatID: router.query.chat as string,
+					yourUsername: data?.user?.name as string,
+				})
+			);
+		}
+
+		// set the chats to the response data if successful and set the username
+		dispatch(setChats({ chats: responseData }));
+		dispatch(
+			setYourUsername({
+				yourUsername: data?.user?.name as string,
+			})
+		);
+		return responseData;
+	};
+
+	const {
+		isLoading: chatFetchLoading,
+		isError: chatFetchError,
+		data: chatData,
+	} = useQuery("fetchChats", getChatsByEmail);
+	console.log("chat data: ", JSON.stringify(chatData, null, 4));
+
 	// RUNS ONCE WHEN THE PAGE LOADS
 	// retrieves all chats that the user has participants in
 	useEffect(() => {
-		const getChatsByEmail = async () => {
-			try {
-				const response = await fetch(
-					`http://localhost:3000/api/chats/email/${data?.user?.email}`
-				);
-				const responseData: Chats = await response.json();
-
-				if (!response.ok) {
-					throw new Error(JSON.stringify(responseData, null, 4));
-				}
-
-				// if the page has a chat query then select that chat id
-				if (router.query.chat !== "") {
-					dispatch(
-						selectChatID({
-							chatID: router.query.chat as string,
-							yourUsername: data?.user?.name as string,
-						})
-					);
-				}
-
-				// set the chats to the response data if successful and set the username
-				dispatch(setChats({ chats: responseData }));
-				dispatch(
-					setYourUsername({
-						yourUsername: data?.user?.name as string,
-					})
-				);
-			} catch (error) {
-				console.error(error);
-			}
-		};
-
 		// gets data for user followers and following
 		const getFollows = async () => {
 			await fetch(
@@ -106,7 +112,6 @@ const DirectMessagesPage: NextPage = () => {
 				});
 		};
 
-		getChatsByEmail();
 		getFollows();
 
 		// setup a new socket connection and set that as the socket
@@ -149,7 +154,7 @@ const DirectMessagesPage: NextPage = () => {
 
 			<div className="pt-[4.5rem] pb-5 h-screen flex justify-center">
 				{/* MAIN CHAT BOX */}
-				<main className="w-[60rem] max-h-[55rem] min-h-[20rem] mx-5 flex justify-start items-start overflow-clip bg-white border-[1px] border-slate-300 rounded-lg">
+				<main className="w-[60rem] min-h-[20rem] mx-5 flex justify-start items-start overflow-clip bg-white border-[1px] border-slate-300 rounded-lg">
 					{/* LEFT SIDE */}
 					<div className="flex flex-col h-full w-1/2">
 						{/* TITLE */}
@@ -165,96 +170,104 @@ const DirectMessagesPage: NextPage = () => {
 
 						{/* LIST OF CHATS */}
 						<div className="h-full w-full border-r-[1px] border-slate-300 flex flex-col justify-start items-start divide-y-[1px] divide-slate-300">
-							{chatState.chats === null && (
-								<div>Loading chats</div>
-							)}
+							<>
+								{chatFetchLoading && <div>Loading chats</div>}
 
-							{/* CHAT LISTING */}
-							{chatState.chats?.map((chat) => {
-								const guy = chat.Participants.find(
-									(participant) =>
-										participant.User.name !==
-										data?.user?.name
-								);
-								return (
-									<div
-										key={chat.ChatID}
-										// SWITCHING CHATS
-										onClick={() => {
-											router.push({
-												pathname: "/direct",
-												query: {
-													chat: chat.ChatID,
-												},
-											});
-											dispatch(
-												selectChatID({
-													chatID: chat.ChatID,
-													yourUsername: data?.user
-														?.name as string,
-												})
-											);
-										}}
-										className={`w-full flex justify-start hover:bg-indigo-100 transition-all cursor-pointer items-center gap-3 py-2 px-3 ${
-											guy?.ChatID ===
-											chatState.selectedChatID
-												? "bg-indigo-100"
-												: ""
-										}`}
-									>
-										{/* PFP WITH ONLINE STATUS INDICATOR */}
-										<div className="relative">
-											<img
-												src={
-													guy?.User.image ??
-													"https://i.pinimg.com/736x/dd/f0/11/ddf0110aa19f445687b737679eec9cb2.jpg"
-												}
-												onError={(e) => {
-													e.preventDefault();
-													console.log(
-														"ERROR LOADING IMAGE"
-													);
-													e.currentTarget.onerror =
-														null;
-													e.currentTarget.classList.add(
-														"animate-pulse"
-													);
-													e.currentTarget.src =
-														"https://i.pinimg.com/736x/dd/f0/11/ddf0110aa19f445687b737679eec9cb2.jpg";
-												}}
-												className="w-11 h-11 rounded-full"
-												alt="PFP"
-											/>
-											{/* LITTLE ONLINE INDICATOR CIRCLE */}
-											<div
-												className={`absolute border-2 border-white -bottom-0 right-0 w-4 h-4 rounded-full ${
-													guy?.User.online
-														? "bg-green-500"
-														: "bg-gray-500"
-												}`}
-											></div>
+								{chatFetchError && (
+									<div>Error loading chats</div>
+								)}
+
+								{/* CHAT LISTING */}
+								{chatData?.map((chat) => {
+									const guy = chat.Participants.find(
+										(participant) =>
+											participant.User.name !==
+											data?.user?.name
+									);
+									return (
+										<div
+											key={chat.ChatID}
+											// SWITCHING CHATS
+											onClick={() => {
+												dispatch(
+													selectChatID({
+														chatID: chat.ChatID,
+														yourUsername: data?.user
+															?.name as string,
+													})
+												);
+												router.push({
+													pathname: "/direct",
+													query: {
+														chat: chat.ChatID,
+													},
+												});
+											}}
+											className={`w-full flex justify-start hover:bg-indigo-100 transition-all cursor-pointer items-center gap-3 py-2 px-3 ${
+												guy?.ChatID ===
+												chatState.selectedChatID
+													? "bg-indigo-100"
+													: ""
+											}`}
+										>
+											{/* PFP WITH ONLINE STATUS INDICATOR */}
+											<div className="relative">
+												<img
+													src={
+														guy?.User.image ??
+														"https://i.pinimg.com/736x/dd/f0/11/ddf0110aa19f445687b737679eec9cb2.jpg"
+													}
+													onError={(e) => {
+														e.preventDefault();
+														console.log(
+															"ERROR LOADING IMAGE"
+														);
+														e.currentTarget.onerror =
+															null;
+														e.currentTarget.classList.add(
+															"animate-pulse"
+														);
+														e.currentTarget.src =
+															"https://i.pinimg.com/736x/dd/f0/11/ddf0110aa19f445687b737679eec9cb2.jpg";
+													}}
+													className="w-11 h-11 rounded-full"
+													alt="PFP"
+												/>
+												{/* LITTLE ONLINE INDICATOR CIRCLE */}
+												<div
+													className={`absolute border-2 border-white -bottom-0 right-0 w-4 h-4 rounded-full ${
+														guy?.User.online
+															? "bg-green-500"
+															: "bg-gray-500"
+													}`}
+												></div>
+											</div>
+											<h4 className="font-semibold">
+												{guy?.User.name}
+											</h4>
 										</div>
-										<h4 className="font-semibold">
-											{guy?.User.name}
-										</h4>
-									</div>
-								);
-							})}
+									);
+								})}
+							</>
 						</div>
 					</div>
 
 					{/* RIGHT SIDE */}
 					<div className="flex flex-col w-full h-full">
 						{/* USERNAME BAR */}
-						<div className="w-full col-span-2 p-3 h-fit border-b-[1px] border-slate-300 bg-indigo-400">
+						<div className="w-full p-3 border-b-[1px] border-slate-300 bg-indigo-400">
 							{chatState.selectedUsername === "" ? (
 								<h2 className="font-bold text-2xl">
 									Chat not selected
 								</h2>
 							) : (
-								<div className="font-bold text-2xl">
-									{chatState.selectedUsername}
-								</div>
+								<Link
+									href={`/user/${chatState.selectedUsername}`}
+								>
+									<a className="font-bold text-white text-2xl">
+										{chatState.selectedUsername}
+									</a>
+								</Link>
 							)}
 						</div>
 

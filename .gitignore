@@ -38,4 +38,4 @@ yarn-error.log*
 test.*
 
 # js lib files
-lib/*.js
+/lib/*.js

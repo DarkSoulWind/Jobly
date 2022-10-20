@@ -1,10 +1,22 @@
+// Which site the data is coming from.
+export type SiteType = "Reed" | "StudentJob";
+
 export interface JobListing {
 	title: string;
 	employer: string;
 	link: string;
 	location: string;
 	description: string;
-	type: string;
+	type: SiteType;
+}
+
+export interface JobPreview {
+	title: SiteType;
+	salary: string;
+	location: string;
+	employmentType: string;
+	employer: { name: string; logo: string };
+	description: string;
 }
 
 // base class, designed to be extended

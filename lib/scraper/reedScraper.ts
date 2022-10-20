@@ -1,5 +1,5 @@
 import cheerio from "cheerio";
-import { Scraper, JobListing } from "./scraper";
+import { Scraper, JobListing, JobPreview, SiteType } from "./scraper";
 
 // implements polymorphism
 export default class ReedScraper extends Scraper {
@@ -58,6 +58,50 @@ export default class ReedScraper extends Scraper {
 			this._results = results;
 
 			resolve();
+		});
+	}
+
+	public static async scrapePreview(link: string): Promise<JobPreview> {
+		return new Promise<JobPreview>(async (resolve, reject) => {
+			const response = await fetch(link);
+			if (!response.ok) reject();
+
+			const html = await response.text();
+			const $ = cheerio.load(html);
+
+			const description = $("span[itemprop='description']").text().trim();
+			const salary = $("span[data-qa='salaryLbl']").text();
+			const title = $("meta[itemprop='title']").attr(
+				"content"
+			) as SiteType;
+			const employer = $("span[itemprop='name']").text();
+			const employerLogo = $("meta[itemprop='logo']").attr(
+				"content"
+			) as string;
+			const employmentType = $("span[itemprop='employmentType']")
+				.text()
+				.trim()
+				.replaceAll(" ", "")
+				.replaceAll("\n", "")
+				.split(",")
+				.join(", ");
+			const location = $("div.location")
+				.last()
+				.text()
+				.trim()
+				.replaceAll(" ", "")
+				.replaceAll("\n", "")
+				.split(",")
+				.join(", ");
+
+			resolve({
+				title,
+				salary,
+				location,
+				employmentType,
+				employer: { name: employer, logo: employerLogo },
+				description,
+			});
 		});
 	}
 }

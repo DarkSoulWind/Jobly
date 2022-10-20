@@ -11,7 +11,9 @@ import {
 	JobSearchState,
 	JOB_SEARCH_ACTION,
 } from "../../reducers/jobReducer";
+import JobListingComponent from "../../components/job/JobListing";
 import { JobListing } from "../../lib/scraper/scraper";
+import SelectedPreview from "../../components/job/SelectedPreview";
 
 interface JobsProps {
 	search: string;
@@ -33,6 +35,10 @@ const Jobs: NextPage<JobsProps> = (props: JobsProps) => {
 		JobSearchReducer,
 		initialState
 	);
+	const [selectedJob, setSelectedJob] = useState({
+		link: props.jobResults.results[0].link ?? "",
+		type: props.jobResults.results[0].type,
+	});
 
 	// QUERY FROM ADDRESS BAR
 	const oldQuery = {
@@ -105,6 +111,10 @@ const Jobs: NextPage<JobsProps> = (props: JobsProps) => {
 			dispatch({
 				type: JOB_SEARCH_ACTION.SET_JOB_RESULTS,
 				payload: { jobResults: data.results },
+			});
+			setSelectedJob({
+				link: data.results[0].link,
+				type: data.results[0].type,
 			});
 		} catch (error) {
 			console.error(error);
@@ -195,8 +205,7 @@ const Jobs: NextPage<JobsProps> = (props: JobsProps) => {
 				{router.query.search ? (
 					<div className="w-4/5 relative px-6 py-5 flex justify-center items-start gap-5">
 						{/* FILTERS */}
-						{/* fixed top-[10.4rem] left-[5rem] */}
-						<aside className="px-5 border-[1px] flex flex-col divide-y-2 border-slate-300 bg-white rounded-lg">
+						<aside className="px-5 border-[1px] hidden md:flex flex-col divide-y-2 border-slate-300 bg-white rounded-lg">
 							{/* DISTANCE FILTERS */}
 							<div className="w-[15rem] py-5 flex flex-col items-start gap-3">
 								<p className="font-bold">Distance</p>
@@ -240,39 +249,51 @@ const Jobs: NextPage<JobsProps> = (props: JobsProps) => {
 						<main className="w-full h-full ">
 							{jobSearchState.jobResults &&
 							jobSearchState.jobResults.length > 0 ? (
-								// SHOW SKELETON JOB RESULTS WHEN LOADING
-								jobSearchState.loading ? (
-									<div className="flex flex-col items-start justify-start gap-5">
-										{[1, 2, 3, 4, 5].map(() => (
-											<LoadingJobListing />
-										))}
-									</div>
-								) : (
-									<div className="w-full flex flex-col items-start gap-5">
-										{jobSearchState.jobResults.map(
-											(job, index) => (
-												<article
-													key={index}
-													className="p-5 border-[1px] border-slate-300 bg-white w-full rounded-lg"
-												>
-													<p className="font-bold">
-														{job.title}
-													</p>
-													<p>{job.location}</p>
-													<p>{job.description}</p>
-												</article>
-											)
-										)}
-									</div>
-								)
+								<>
+									{
+										// SHOW SKELETON JOB RESULTS WHEN LOADING
+										jobSearchState.loading ? (
+											<section className="flex flex-col items-start justify-start gap-5">
+												{[1, 2, 3, 4, 5].map(() => (
+													<LoadingJobListing />
+												))}
+											</section>
+										) : (
+											// ALL JOB LISTINGS
+											<section className="w-full flex flex-col items-start gap-5">
+												{jobSearchState.jobResults.map(
+													(job, index) => (
+														<JobListingComponent
+															onClick={() =>
+																setSelectedJob({
+																	link: job.link,
+																	type: job.type,
+																})
+															}
+															key={index}
+															job={job}
+														/>
+													)
+												)}
+											</section>
+										)
+									}
+								</>
 							) : (
-								<div className="text-center h-full  text-black">
+								<section className="text-center h-full  text-black">
 									<p className="text-4xl font-bold">
 										No jobs available
 									</p>
-								</div>
+								</section>
 							)}
 						</main>
+
+						{selectedJob && (
+							<SelectedPreview
+								link={selectedJob.link}
+								type={selectedJob.type}
+							/>
+						)}
 					</div>
 				) : (
 					// SHOW POPULAR SEARCHES IF SEARCH ISNT SPECIFIED
@@ -330,13 +351,16 @@ const Jobs: NextPage<JobsProps> = (props: JobsProps) => {
 export async function getServerSideProps(context: GetServerSidePropsContext) {
 	const search = (context.query.search as string) ?? "";
 	const location = (context.query.location as string) ?? "";
-	console.log(search, location);
+
+	// if search is empty do not server side render
 	if (search === "") return { props: { search, jobResults: [] } };
+
 	const URL = `http://localhost:3000/api/jobs?search=${search
 		.split(" ")
 		.join("%20")}&location=${location.split(" ").join("%20")}`;
 	const response = await fetch(URL);
 	const jobResults = await response.json();
+
 	return { props: { search, jobResults } };
 }
 

@@ -2,8 +2,11 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import type { JobListing } from "../../../lib/scraper/scraper";
 import ReedScraper from "../../../lib/scraper/reedScraper";
+import StudentJobScraper from "../../../lib/scraper/studentJobScraper";
 
 interface Results {
+	keyword: string;
+	location: string;
 	results: JobListing[];
 }
 
@@ -15,9 +18,16 @@ export default async function handler(
 		search: string;
 		location: string;
 	};
+
 	const reedResults = new ReedScraper(search, location);
 	await reedResults.scrape();
-	console.log(reedResults.results);
+	const studentJobResults = new StudentJobScraper(search, location);
+	await studentJobResults.scrape();
 
-	res.json({ results: reedResults.results });
+	res.json({
+		keyword: search,
+		location,
+		results: [...reedResults.results, ...studentJobResults.results],
+	});
+	// res.json({ keyword: search, location, results: studentJobResults.results });
 }

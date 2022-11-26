@@ -1,45 +1,39 @@
 "PROFILE PAGE";
 
-import type { NextPage, GetStaticPropsContext } from "next";
+import type {
+	NextPage,
+	GetStaticPropsContext,
+	InferGetStaticPropsType,
+} from "next";
 import React, { useState, useEffect, useReducer } from "react";
 import { v4 as uuid } from "uuid";
 import Head from "next/head";
-import Navbar from "../../../components/nav/Navbar";
-import Footer from "../../../components/footer/Footer";
+import Navbar from "@components/nav/Navbar";
+import Footer from "@components/footer/Footer";
 import { FaCamera, FaEnvelope, FaLocationArrow } from "react-icons/fa";
-import { useModal } from "../../../hooks/useModal";
-import EditProfileModal from "../../../components/modal/EditProfileModal";
-import ContactDetailModal from "../../../components/modal/ContactDetailModal";
-import { prisma } from "../../../lib/prisma";
+import { useModal } from "@hooks/useModal";
+import EditProfileModal from "@components/modal/EditProfileModal";
+import ContactDetailModal from "@components/modal/ContactDetailModal";
+import { prisma } from "@lib/prisma";
+import { User, Comment, UserPreference, Post, Follow } from "@prisma/client";
 import {
-	User,
-	Comments,
-	UserPreferences,
-	Posts,
-	Follows,
-} from "@prisma/client";
-import {
-	UserProfile,
+	// UserProfile,
 	profileReducer,
 	ProfileState,
 	PROFILE_ACTION,
-} from "../../../reducers/profileReducer";
+} from "@reducers/profileReducer";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/router";
-import { useDate } from "../../../hooks/useDate";
+import { useDate } from "@hooks/useDate";
 import { AnimatePresence, motion } from "framer-motion";
-import Alert from "../../../components/alert/Alert";
-import FollowersModal from "../../../components/modal/FollowersModal";
-
-interface UserProfileProps {
-	profile: UserProfile;
-}
+import Alert from "@components/alert/Alert";
+import FollowersModal from "@components/modal/FollowersModal";
 
 type UserPreferencesFollows =
 	| (User & {
-			preferences: UserPreferences;
-			followers: Follows[];
-			following: Follows[];
+			preferences: UserPreference;
+			followers: Follow[];
+			following: Follow[];
 	  })
 	| null;
 
@@ -52,30 +46,33 @@ type FollowResponse = {
 export const initProfileState = ({
 	profile,
 }: {
-	profile: UserProfile;
+	profile: InferGetStaticPropsType<typeof getStaticProps>;
 }): ProfileState => {
 	return {
-		profile,
+		...profile,
 		isFollowing: false,
 		successMessage: "",
 	};
 };
 
-const UserProfile: NextPage<UserProfileProps> = ({ profile }) => {
+// const UserProfile: NextPage<UserProfileProps> = ({ profile }) => {
+const UserProfile: NextPage<InferGetStaticPropsType<typeof getStaticProps>> = (
+	props
+) => {
 	const router = useRouter();
 	const { data } = useSession();
 	// console.log("PROFILE DATA:", JSON.stringify(profile, null, 4));
 
 	const [profileState, dispatch] = useReducer(
 		profileReducer,
-		{ profile },
+		{ profile: { ...props } },
 		initProfileState
 	);
 
-	const activities = [...profile.Comments, ...profile.posts]
+	const activities = [...props.comments!, ...props.posts!]
 		.sort((a, b) => {
-			if (a.DatePosted < b.DatePosted) return 1;
-			else if (a.DatePosted > b.DatePosted) return -1;
+			if (a.datePosted < b.datePosted) return 1;
+			else if (a.datePosted > b.datePosted) return -1;
 			else return 0;
 		})
 		.slice(0, 5);
@@ -104,14 +101,11 @@ const UserProfile: NextPage<UserProfileProps> = ({ profile }) => {
 
 	// Fetch your data if your email and the profile email do not match
 	useEffect(() => {
-		const abortController = new AbortController();
-
 		const getUserByEmail = async () => {
-			if (data?.user?.email !== profileState.profile.email) {
+			if (data?.user?.email !== profileState.email) {
 				console.log("Fetching your data...");
 				const response = await fetch(
-					`http://localhost:3000/api/user/email/${data?.user?.email}`,
-					{ signal: abortController.signal }
+					`http://localhost:3000/api/user/email/${data?.user?.email}`
 				);
 				const responseData: UserPreferencesFollows =
 					await response.json();
@@ -122,7 +116,7 @@ const UserProfile: NextPage<UserProfileProps> = ({ profile }) => {
 				setYourData(responseData);
 
 				const isFollowing =
-					profileState.profile.followers.filter(
+					profileState.followers!.filter(
 						(follow) => follow.followerId === responseData?.id
 					).length > 0;
 				console.log("Following:", isFollowing);
@@ -137,17 +131,13 @@ const UserProfile: NextPage<UserProfileProps> = ({ profile }) => {
 		};
 
 		getUserByEmail();
-
-		return () => {
-			abortController.abort();
-		};
 	}, [data]);
 
 	const handleFollow = async () => {
 		setFollowButtonLoading(true);
 		const body = {
 			followerId: yourData?.id,
-			followingId: profileState.profile.id,
+			followingId: profileState.id,
 		};
 		// if not following, create a new follow
 		console.log("Are you following tho?", profileState.isFollowing);
@@ -207,7 +197,7 @@ const UserProfile: NextPage<UserProfileProps> = ({ profile }) => {
 	};
 
 	const handleChatButton = async () => {
-		const body = { userid1: yourData?.id, userid2: profile.id };
+		const body = { userid1: yourData?.id, userid2: props.id };
 		const response = await fetch(
 			"http://localhost:3000/api/chats/findSharedPriv",
 			{ method: "POST", body: JSON.stringify(body) }
@@ -219,7 +209,7 @@ const UserProfile: NextPage<UserProfileProps> = ({ profile }) => {
 		// if they dont share a chat, create a new one with them as participants
 		if (!data.exists) {
 			const newChatID = uuid();
-			const chatname = `${yourData?.name} and ${profile.name}`;
+			const chatname = `${yourData?.name} and ${props.name}`;
 			await fetch("http://localhost:3000/api/chats/create", {
 				method: "POST",
 				body: JSON.stringify({
@@ -227,7 +217,7 @@ const UserProfile: NextPage<UserProfileProps> = ({ profile }) => {
 					chatname,
 					participants: [
 						{ userid: yourData?.id },
-						{ userid: profile.id },
+						{ userid: props.id },
 					],
 				}),
 			})
@@ -251,10 +241,10 @@ const UserProfile: NextPage<UserProfileProps> = ({ profile }) => {
 	return (
 		<>
 			<Head>
-				<title>{profileState.profile.name} • Jobly</title>
+				<title>{profileState.name} • Jobly</title>
 				<meta
 					name="description"
-					content={`Jobly profile for ${profileState.profile.name}`}
+					content={`Jobly profile for ${profileState.name}`}
 				/>
 			</Head>
 			<Navbar />
@@ -287,13 +277,13 @@ const UserProfile: NextPage<UserProfileProps> = ({ profile }) => {
 					<div className="relative">
 						<img
 							src={
-								profileState.profile.preferences?.Banner ??
+								profileState.preferences?.banner ??
 								"https://swall.teahub.io/photos/small/303-3034192_default-banner-banner-jpg.jpg"
 							}
 							className="w-full h-full"
 							alt="profile banner"
 						/>
-						{data?.user?.name === profileState.profile.name && (
+						{data?.user?.name === profileState.name && (
 							<button className="absolute group bg-white rounded-full p-3 top-3 right-3">
 								<FaCamera className="aspect-square fill-blue-500 group-hover:fill-blue-800 transition-all w-7 h-7" />
 							</button>
@@ -303,9 +293,9 @@ const UserProfile: NextPage<UserProfileProps> = ({ profile }) => {
 						<div className="absolute -top-36">
 							{/* PROFILE PIC */}
 							<img
-								src={profileState.profile.image ?? ""}
+								src={profileState.image ?? ""}
 								className="aspect-square top-0 rounded-full w-48 border-[4px] border-white"
-								alt={`${profileState.profile.image} pfp`}
+								alt={`${profileState.image} pfp`}
 								onError={(e) => {
 									e.preventDefault();
 									console.log("ERROR LOADING IMAGE");
@@ -323,43 +313,35 @@ const UserProfile: NextPage<UserProfileProps> = ({ profile }) => {
 							<div className="flex justify-start items-center gap-2">
 								<h2 className="font-extrabold text-2xl">
 									{`${
-										profileState.profile.preferences
-											?.FirstName ??
-										profileState.profile.name
+										profileState.preferences?.firstName ??
+										profileState.name
 									} ${
-										profileState.profile.preferences
-											?.LastName ?? ""
+										profileState.preferences?.lastName ?? ""
 									}`}
 								</h2>
-								{profileState.profile.preferences?.Pronouns && (
+								{profileState.preferences?.pronouns && (
 									<p className="text-xs bg-slate-200 font-bold p-1 rounded-sm">
-										{
-											profileState.profile.preferences
-												.Pronouns
-										}
+										{profileState.preferences.pronouns}
 									</p>
 								)}
 							</div>
 							{/* USERNAME */}
-							<p className="font-bold">
-								@{profileState.profile.name}
-							</p>
+							<p className="font-bold">@{profileState.name}</p>
 							{/* BIO */}
 							<h3 className="mt-2">
-								{profileState.profile.preferences?.Bio ??
-									"Empty bio"}
+								{profileState.preferences?.bio ?? "Empty bio"}
 							</h3>
 							{/* LOCATION AND CONTACT INFO BUTTON */}
 							<p className="text-sm flex justify-start items-center gap-1 text-slate-500">
 								{/* LOCATION ICON */}
-								{(profileState.profile.preferences?.City ||
-									profileState.profile.preferences
-										?.CountryRegion) && <FaLocationArrow />}
-								{profileState.profile.preferences?.City
-									? `${profileState.profile.preferences?.City}, `
+								{(profileState.preferences?.city ||
+									profileState.preferences
+										?.countryRegion) && <FaLocationArrow />}
+								{profileState.preferences?.city
+									? `${profileState.preferences?.city}, `
 									: ""}
-								{profileState.profile.preferences?.CountryRegion
-									? `${profileState.profile.preferences?.CountryRegion} • `
+								{profileState.preferences?.countryRegion
+									? `${profileState.preferences?.countryRegion} • `
 									: ""}
 								<button
 									className="text-blue-500 hover:underline"
@@ -371,11 +353,11 @@ const UserProfile: NextPage<UserProfileProps> = ({ profile }) => {
 							{/* FOLLOWERS AND FOLLOWING */}
 							<h4 className="mt-1">
 								<strong>
-									{profileState.profile.following.length}
+									{profileState.following?.length}
 								</strong>{" "}
 								Following{" "}
 								<strong>
-									{profileState.profile.followers.length}
+									{profileState.followers?.length}
 								</strong>{" "}
 								<button
 									className="hover:underline"
@@ -385,8 +367,7 @@ const UserProfile: NextPage<UserProfileProps> = ({ profile }) => {
 								</button>
 							</h4>
 							<div className="mt-5">
-								{profileState.profile.email !==
-									data?.user?.email && (
+								{profileState.email !== data?.user?.email && (
 									// DM BUTTON AND FOLLOW BUTTON
 									<div className="flex justify-start items-center gap-2">
 										{/* DM BUTTON */}
@@ -402,7 +383,7 @@ const UserProfile: NextPage<UserProfileProps> = ({ profile }) => {
 											onClick={handleFollow}
 											disabled={followButtonLoading}
 											className={`${
-												profileState.profile.followers.filter(
+												profileState.followers!.filter(
 													(follow) =>
 														follow.followerId ===
 														yourData?.id
@@ -411,7 +392,7 @@ const UserProfile: NextPage<UserProfileProps> = ({ profile }) => {
 													: "bg-blue-500 disabled:bg-blue-800 hover:bg-blue-800 text-white"
 											} transition-all rounded-full font-semibold py-2 px-4`}
 										>
-											{profileState.profile.followers.filter(
+											{profileState.followers!.filter(
 												(follow) =>
 													follow.followerId ===
 													yourData?.id
@@ -423,7 +404,7 @@ const UserProfile: NextPage<UserProfileProps> = ({ profile }) => {
 								)}
 							</div>
 						</div>
-						{profileState.profile.email === data?.user?.email && (
+						{profileState.email === data?.user?.email && (
 							// EDIT PROFILE BUTTON
 							<div className="absolute top-3 right-3 flex justify-start items-center gap-3">
 								<motion.button
@@ -445,34 +426,33 @@ const UserProfile: NextPage<UserProfileProps> = ({ profile }) => {
 					</div>
 				</section>
 
-				{/* SECOND CARD */}
+				{/* RECENT ACTIVITY CARD */}
 				<section className="bg-white p-5 rounded-xl overflow-clip h-full">
 					<p className="text-2xl font-bold">Recent activity</p>
 
 					<div className="mt-2 flex flex-col items-start divide-y-[1px] gap-3 w-full">
 						{activities.map((activity) => {
-							function isPost(
-								activity:
-									| Posts
-									| (Comments & {
-											Post: Posts;
-									  })
-							): activity is Posts {
-								return (
-									(activity as Posts).PostText !== undefined
-								);
+							function isPost(a: typeof activity): a is Post {
+								return (a as Post).postText !== undefined;
 							}
 
 							return (
 								<div
+									key={activity.id}
 									onClick={() =>
-										router.push(`/post/${activity.PostID}`)
+										router.push(
+											`/post/${
+												isPost(activity)
+													? activity.id
+													: activity.post.id
+											}`
+										)
 									}
 									className="w-full pt-1 cursor-pointer"
 								>
 									<p className="text-xs text-slate-600">
 										<span className="font-semibold">
-											{profileState.profile.name}
+											{profileState.name}
 										</span>{" "}
 										{!isPost(activity)
 											? "commented"
@@ -482,33 +462,33 @@ const UserProfile: NextPage<UserProfileProps> = ({ profile }) => {
 											<span>
 												on{" "}
 												<span className="font-semibold">
-													{activity.Post.PostText}
+													{activity.post.postText}
 												</span>
 											</span>
 										) : (
 											""
 										)}{" "}
-										• {useDate(activity.DatePosted, true)}
+										• {useDate(activity.datePosted, true)}
 									</p>
 									<div className="pt-1 flex justify-start items-start gap-3">
 										{isPost(activity) &&
-											(activity as Posts).Image && (
+											(activity as Post).image && (
 												<img
 													src={
-														(activity as Posts)
-															.Image as string
+														(activity as Post)
+															.image as string
 													}
 													className="max-w-[4rem] max-h-[4rem]"
 													alt={
-														(activity as Posts)
-															.PostText
+														(activity as Post)
+															.postText
 													}
 												/>
 											)}
 										<p>
 											{!isPost(activity)
-												? activity.CommentText
-												: activity.PostText}
+												? activity.commentText
+												: activity.postText}
 										</p>
 									</div>
 								</div>
@@ -522,7 +502,7 @@ const UserProfile: NextPage<UserProfileProps> = ({ profile }) => {
 					<p className="text-2xl font-bold">Interests</p>
 
 					<div className="mt-2 flex flex-wrap gap-3 w-full">
-						{profileState.profile.interests.length != 1 ? (
+						{profileState.interests?.length != 1 ? (
 							["football", "hockey", "computers"].map(
 								(interest) => (
 									<div className="bg-indigo-500 py-1 px-4 rounded-full">
@@ -610,18 +590,22 @@ export async function getStaticProps(context: GetStaticPropsContext) {
 			email: true,
 			posts: {
 				orderBy: {
-					DatePosted: "desc",
+					datePosted: "desc",
 				},
 			},
-			Comments: {
+			comments: {
 				include: {
-					Post: true,
+					post: true,
 				},
 				orderBy: {
-					DatePosted: "desc",
+					datePosted: "desc",
 				},
 			},
-			interests: true,
+			interests: {
+				select: {
+					name: true,
+				},
+			},
 			phoneNumber: true,
 			password: false,
 			followers: {
@@ -634,8 +618,12 @@ export async function getStaticProps(context: GetStaticPropsContext) {
 			id: true,
 		},
 	});
+
+	// to preserve type as we need to convert to JSON string and back
+	type Props = typeof profile;
 	return {
-		props: { profile: JSON.parse(JSON.stringify(profile)) },
+		props: { ...(JSON.parse(JSON.stringify(profile)) as Props) },
+		// props: { ...profile },
 		revalidate: 10,
 	};
 }

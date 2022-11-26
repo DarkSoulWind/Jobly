@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { prisma } from "../../../lib/prisma";
+import { prisma } from "@lib/prisma";
 
 export default async function handler(
 	req: NextApiRequest,
@@ -12,7 +12,7 @@ export default async function handler(
 		await prisma.message
 			.delete({
 				where: {
-					MessageID: messageID as string,
+					id: messageID as string,
 				},
 			})
 			.then((response) => {

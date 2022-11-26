@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { prisma } from "../../../lib/prisma";
+import { prisma } from "@lib/prisma";
 
 export default async function handler(
 	req: NextApiRequest,
@@ -9,6 +9,7 @@ export default async function handler(
 		res.status(405).json({ message: "Please use the GET method." });
 	} else {
 		const { email } = req.query;
+
 		await prisma.user
 			.findFirst({
 				where: {

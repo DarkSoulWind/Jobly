@@ -1,26 +1,28 @@
+"FEED PAGE";
+
 import type { NextPage } from "next";
 import React, { useEffect, useReducer, useState } from "react";
 import Image from "next/image";
 import Head from "next/head";
-import Navbar from "../../components/nav/Navbar";
-import Footer from "../../components/footer/Footer";
-import LookingForJob from "../../public/images/LookingForJob.png";
-import { useModal } from "../../hooks/useModal";
+import Navbar from "@components/nav/Navbar";
+import Footer from "@components/footer/Footer";
+import LookingForJob from "@public/images/LookingForJob.png";
+import { useModal } from "@hooks/useModal";
 import { useQuery } from "react-query";
-import CreatePostModal from "../../components/modal/CreatePostModal";
-import { User } from "@prisma/client";
+import CreatePostModal from "@components/modal/CreatePostModal";
+import { Post, User } from "@prisma/client";
 import {
 	PostsUserPostLikesComments,
 	feedReducer,
 	FeedState,
 	UserWithPreferences,
 	FEED_ACTION,
-} from "../../reducers/feedReducer";
-import PostComponent from "../../components/post/Post";
+} from "@reducers/feedReducer";
+import PostComponent from "@components/post/Post";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/router";
-import Alert from "../../components/alert/Alert";
-import SkeletonLoaderPost from "../../components/post/SkeletonLoaderPost";
+import Alert from "@components/alert/Alert";
+import SkeletonLoaderPost from "@components/post/SkeletonLoaderPost";
 import { AnimatePresence } from "framer-motion";
 
 // INITIALIZER FOR GLOBAL STATE FOR THIS COMPONENT
@@ -49,6 +51,7 @@ const Feed: NextPage = () => {
 			`http://localhost:3000/api/user/email/${data?.user?.email}`
 		);
 		const responseData: UserWithPreferences | null = await response.json();
+		console.log("YOUR DATA:", JSON.stringify(responseData, null, 4));
 		return responseData;
 	};
 
@@ -56,8 +59,11 @@ const Feed: NextPage = () => {
 		const response = await fetch(
 			`http://localhost:3000/api/feed/recommend/${data?.user?.email}`
 		);
-		const responseData: PostsUserPostLikesComments[] | null =
-			await response.json();
+		const responseData: (Post & {
+			user: {
+				name: string;
+			};
+		})[] = await response.json();
 		return responseData;
 	};
 
@@ -106,7 +112,7 @@ const Feed: NextPage = () => {
 								src={
 									yourDataFetchError || yourDataFetchLoading
 										? "https://swall.teahub.io/photos/small/303-3034192_default-banner-banner-jpg.jpg"
-										: yourData?.preferences?.Banner ??
+										: yourData?.preferences?.banner ??
 										  "https://swall.teahub.io/photos/small/303-3034192_default-banner-banner-jpg.jpg"
 								}
 								alt="banner"
@@ -149,12 +155,12 @@ const Feed: NextPage = () => {
 												Error fetching profile
 											</h3>
 										)}
-										{yourData?.preferences?.FirstName ??
+										{yourData?.preferences?.firstName ??
 											yourData?.name}{" "}
-										{yourData?.preferences?.LastName ?? ""}
+										{yourData?.preferences?.lastName ?? ""}
 									</h3>
 									<h4 className="text-sm text-slate-500">
-										{yourData?.preferences?.Bio ??
+										{yourData?.preferences?.bio ??
 											"Empty bio"}
 									</h4>
 									<button
@@ -254,7 +260,7 @@ const Feed: NextPage = () => {
 
 							<div className="flex flex-col items-center gap-2">
 								{posts?.map((post) => (
-									<div className="w-full" key={post.PostID}>
+									<div className="w-full" key={post.id}>
 										<PostComponent
 											postData={post}
 											yourData={
@@ -285,18 +291,18 @@ const Feed: NextPage = () => {
 						dispatch={dispatch}
 					/>
 				)}
-			</AnimatePresence>
+				{/* </AnimatePresence>
 
 			<AnimatePresence
 				initial={false}
 				mode="wait"
 				onExitComplete={() => null}
-			>
+			> */}
 				{feedState.success !== "" && (
 					<Alert
 						level="Success"
-						message={feedState.success}
-						open={feedState.success.length > 0}
+						message={feedState.success as string}
+						open={(feedState.success?.length || false) > 0}
 						closeAction={() =>
 							dispatch({
 								type: FEED_ACTION.SET_SUCCESS_MESSAGE,
@@ -308,8 +314,8 @@ const Feed: NextPage = () => {
 				{feedState.error !== "" && (
 					<Alert
 						level="Error"
-						message={feedState.error}
-						open={feedState.error.length > 0}
+						message={feedState.error as string}
+						open={(feedState.error?.length || false) > 0}
 						closeAction={() =>
 							dispatch({
 								type: FEED_ACTION.SET_ERROR_MESSAGE,

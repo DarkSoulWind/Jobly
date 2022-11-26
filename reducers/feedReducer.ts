@@ -1,27 +1,33 @@
 import {
 	User,
-	UserPreferences,
-	Posts,
-	PostLikes,
-	Comments,
+	UserPreference,
+	Post,
+	PostLike,
+	Comment,
+	Follow,
 } from "@prisma/client";
 
-export type PostsUserPostLikesComments = Posts & {
+export type PostsUserPostLikesComments = Post & {
 	User: User & {
-		preferences: UserPreferences | null;
+		preferences: UserPreference | null;
 	};
-	PostLikes: PostLikes[];
-	Comments: Comments[];
+	PostLikes: PostLike[];
+	Comments: Comment[];
 };
 
-export type UserWithPreferences = User & {
-	preferences: UserPreferences | null;
-};
+export type UserWithPreferences = {
+	preferences: UserPreference | null;
+	followers: Follow[];
+	following: Follow[];
+	id: string;
+	image: string | null;
+	name: string;
+} | null;
 
 export interface FeedState {
 	posts: PostsUserPostLikesComments[] | null;
-	error: string;
-	success: string;
+	error: string | null;
+	success: string | null;
 }
 
 export enum FEED_ACTION {
@@ -35,9 +41,9 @@ export interface Action {
 	type: FEED_ACTION;
 	payload: {
 		posts?: PostsUserPostLikesComments[];
-		postID?: number;
-		success?: string;
-		error?: string;
+		postID?: string;
+		success?: string | null;
+		error?: string | null;
 	};
 }
 
@@ -48,7 +54,7 @@ export const feedReducer = (state: FeedState, action: Action): FeedState => {
 				...state,
 				posts:
 					state.posts?.filter(
-						(post) => post.PostID !== action.payload.postID
+						(post) => post.id !== action.payload.postID
 					) ?? state.posts,
 				error: null,
 				success: "Removed post.",

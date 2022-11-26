@@ -1,7 +1,4 @@
 import React, { FC, useState } from "react";
-import { useSignInWithGoogle } from "react-firebase-hooks/auth";
-import { useRouter } from "next/router";
-import { auth } from "../../firebase-config";
 import { FaGoogle } from "react-icons/fa";
 import { signIn } from "next-auth/react";
 

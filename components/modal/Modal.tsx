@@ -1,7 +1,7 @@
 import React, { FC } from "react";
-import { AnimatePresence, motion, Variants } from "framer-motion";
+import { motion, Variants } from "framer-motion";
 
-type ModalProps = {
+interface ModalProps {
 	title?: string;
 	open: boolean;
 	children?: JSX.Element;
@@ -13,7 +13,7 @@ type ModalProps = {
 	discardButton?: string;
 	discardButtonAction?: () => void;
 	discardButtonColour?: string;
-};
+}
 
 const dropIn: Variants = {
 	hidden: {

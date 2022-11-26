@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { prisma } from "../../../lib/prisma";
+import { prisma } from "@lib/prisma";
 
 export default async function handler(
 	req: NextApiRequest,
@@ -13,8 +13,8 @@ export default async function handler(
 			where: {
 				OR: [
 					{ name: { contains: searchitem } },
-					{ preferences: { FirstName: { contains: searchitem } } },
-					{ preferences: { LastName: { contains: searchitem } } },
+					{ preferences: { firstName: { contains: searchitem } } },
+					{ preferences: { lastName: { contains: searchitem } } },
 				],
 			},
 			select: {

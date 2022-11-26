@@ -1,4 +1,4 @@
-import { UserPreferences } from "@prisma/client";
+import { UserPreference } from "@prisma/client";
 import { NextRouter } from "next/router";
 import React, { FC } from "react";
 import { SearchResults } from "../../pages/search/[searchitem]";
@@ -42,10 +42,10 @@ const UserResults: FC<UserResultsProps> = ({ router, results: { users } }) => {
 					<div className="flex flex-col items-start">
 						<p className="text-lg font-semibold">{user.name}</p>
 						<p className="font-medium">
-							{user.preferences?.FirstName ?? ""}{" "}
-							{user.preferences?.LastName ?? ""}
+							{user.preferences?.firstName ?? ""}{" "}
+							{user.preferences?.lastName ?? ""}
 						</p>
-						<p className="text-sm">{user.preferences?.Bio ?? ""}</p>
+						<p className="text-sm">{user.preferences?.bio ?? ""}</p>
 					</div>
 				</button>
 			))}

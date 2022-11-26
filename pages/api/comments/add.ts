@@ -1,6 +1,5 @@
-import { request } from "http";
 import type { NextApiRequest, NextApiResponse } from "next";
-import { prisma } from "../../../lib/prisma";
+import { prisma } from "@lib/prisma";
 
 export default async function handler(
 	req: NextApiRequest,
@@ -16,29 +15,26 @@ export default async function handler(
 			CommentText,
 		}: {
 			UserID: string;
-			PostID: number;
+			PostID: string;
 			DatePosted: string;
 			CommentText: string;
 		} = JSON.parse(req.body);
-		await prisma.comments
-			.create({
+
+		try {
+			const response = await prisma.comment.create({
 				data: {
-					UserID,
-					PostID,
-					DatePosted,
-					CommentText,
+					userID: UserID,
+					postID: PostID,
+					datePosted: DatePosted,
+					commentText: CommentText,
 				},
-			})
-			.then((response) => {
-				console.log(
-					"Created comment!",
-					JSON.stringify(response, null, 4)
-				);
-				res.status(200).json(response);
-			})
-			.catch((error) => {
-				console.error(error);
-				res.status(500).json({ error });
 			});
+
+			console.log("Created comment!", JSON.stringify(response, null, 4));
+			res.status(200).json(response);
+		} catch (error) {
+			console.error(error);
+			res.status(500).json({ error });
+		}
 	}
 }

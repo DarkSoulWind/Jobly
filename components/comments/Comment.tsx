@@ -1,18 +1,20 @@
-import React, { FC } from "react";
-import { Comments, User, UserPreferences } from "@prisma/client";
-import { FaEllipsisH, FaFlag, FaTrash } from "react-icons/fa";
-import { useModal } from "../../hooks/useModal";
-import Modal from "../modal/Modal";
+import React, { FC, Fragment } from "react";
+import { Comment, User, UserPreference } from "@prisma/client";
+import { FaEllipsisH } from "react-icons/fa";
+import { useModal } from "@hooks/useModal";
+import Modal from "@components/modal/Modal";
 import { useRouter } from "next/router";
-import { useDate } from "../../hooks/useDate";
+import { useDate } from "@hooks/useDate";
 import { AnimatePresence } from "framer-motion";
+import { Menu, Transition } from "@headlessui/react";
+import { HiFlag, HiTrash } from "react-icons/hi";
 
-type UserWithPreferences = User & { preferences: UserPreferences | null };
+type UserWithPreferences = User & { preferences: UserPreference | null };
 
 type CommentProps = {
-	commentData: Comments & {
-		User: User & {
-			preferences: UserPreferences | null;
+	commentData: Comment & {
+		user: User & {
+			preferences: UserPreference | null;
 		};
 	};
 	yourData?: UserWithPreferences | null;
@@ -23,14 +25,14 @@ const Comment: FC<CommentProps> = ({ commentData, author, yourData }) => {
 	const router = useRouter();
 
 	// WHEN THE COMMENT WAS POSTED RELATIVE TO TODAY
-	const relativeDatePosted = useDate(new Date(commentData.DatePosted));
+	const relativeDatePosted = useDate(new Date(commentData.datePosted));
 
 	// CONFIRM DELETE MODAL
 	const [confirmDeleteOpen, setConfirmDeleteOpen, toggleConfirmDelete] =
 		useModal(false);
 
 	const deleteComment = async () => {
-		const CommentID = commentData.CommentID;
+		const CommentID = commentData.id;
 		try {
 			console.log("Deleting comment...");
 			const response = await fetch(
@@ -56,7 +58,7 @@ const Comment: FC<CommentProps> = ({ commentData, author, yourData }) => {
 	return (
 		<div className="relative w-full flex items-start justify-start gap-2">
 			<img
-				src={commentData.User.image ?? ""}
+				src={commentData.user.image ?? ""}
 				className="w-12 rounded-full aspect-square"
 				onError={(e) => {
 					e.preventDefault();
@@ -74,19 +76,19 @@ const Comment: FC<CommentProps> = ({ commentData, author, yourData }) => {
 					<a
 						className="hover:underline cursor-pointer"
 						onClick={() =>
-							router.push(`/user/${commentData.User.name}`)
+							router.push(`/user/${commentData.user.name}`)
 						}
 					>
-						{commentData.User.preferences?.FirstName ??
-							commentData.User.name}{" "}
-						{commentData.User.preferences?.FirstName
-							? commentData.User.preferences?.LastName
+						{commentData.user.preferences?.firstName ??
+							commentData.user.name}{" "}
+						{commentData.user.preferences?.firstName
+							? commentData.user.preferences?.lastName
 							: ""}
 					</a>
-					{commentData.User.preferences?.Pronouns && (
+					{commentData.user.preferences?.pronouns && (
 						<span className="font-normal text-slate-600">
 							{" "}
-							({commentData.User.preferences.Pronouns})
+							({commentData.user.preferences.pronouns})
 						</span>
 					)}{" "}
 					{/* CHECKS IF THEY ARE OP */}
@@ -97,52 +99,86 @@ const Comment: FC<CommentProps> = ({ commentData, author, yourData }) => {
 					)}
 				</h3>
 				<h4 className="text-xs text-slate-600">
-					{commentData.User.preferences?.Bio}
+					{commentData.user.preferences?.bio}
 				</h4>
-				<p className="mt-2">{commentData.CommentText}</p>
+				<p className="mt-2">{commentData.commentText}</p>
 			</div>
 			<div className="absolute top-1 right-3 flex justify-end items-center gap-1">
 				<p className="text-xs text-slate-600">{relativeDatePosted}</p>
-				<button className="relative group p-2 rounded-full aspect-square hover:bg-slate-300 transition-all">
-					<FaEllipsisH className="fill-slate-600" />
-					{/* DROPDOWN MENU */}
-					<div className="absolute z-10 w-[20rem] top-8 overflow-clip right-0 hidden shadow-sm shadow-slate-500 group-focus-within:block bg-slate-100 border-[1px] border-slate-200 rounded-lg">
-						<div className="flex gap-2 flex-col justify-start items-start w-full">
-							{/* REPORT POSTS BUTTON */}
-							{commentData.User.name !== yourData?.name && (
-								<button className="w-full gap-4 flex items-center justify-start px-4 py-1 hover:bg-slate-200">
-									<FaFlag className="aspect-square w-6 h-6" />
-									<div className="w-full text-left text-sm">
-										<h5 className="font-bold">Report</h5>
-										<p>
-											This comment is offensive or the
-											account is hacked
-										</p>
-									</div>
-								</button>
-							)}
-							{/* DELETE POST BUTTON */}
-							{commentData.User.name === yourData?.name && (
-								<button
-									onClick={toggleConfirmDelete}
-									className="w-full gap-4 flex items-center justify-start px-4 py-1 hover:bg-slate-200"
-								>
-									<FaTrash className="aspect-square w-6 h-6" />
-									<div className="w-full text-left text-sm">
-										<h5 className="font-bold">
-											Delete comment
-										</h5>
-										<p>
-											Remove the comment from your
-											timeline
-										</p>
-									</div>
-								</button>
-							)}
-						</div>
-					</div>
-				</button>
+				<Menu>
+					<Menu.Button className="relative group p-2 rounded-full aspect-square hover:bg-slate-100 transition-all">
+						<FaEllipsisH />
+					</Menu.Button>
+
+					<Transition
+						as={Fragment}
+						enter="transition ease-out duration-100"
+						enterFrom="transform opacity-0 scale-95"
+						enterTo="transform opacity-100 scale-100"
+						leave="transition ease-in duration-75"
+						leaveFrom="transform opacity-100 scale-100"
+						leaveTo="transform opacity-0 scale-95"
+					>
+						<Menu.Items className="absolute top-5 mt-1 w-56 divide-y divide-gray-100 rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+							<div className="p-1">
+								{/* DELETE BUTTON */}
+								{commentData.user.name === yourData?.name && (
+									<Menu.Item>
+										{({ active }) => (
+											<button
+												onClick={toggleConfirmDelete}
+												className={`${
+													active
+														? "bg-violet-500 text-white"
+														: "text-gray-900"
+												} group flex gap-2 w-full items-center transition-all duration-300 rounded-md px-2 py-2 text-sm`}
+											>
+												<HiTrash
+													className={`w-5 h-5 ${
+														active
+															? "fill-white"
+															: "fill-red-500"
+													}`}
+												/>
+												<p
+													className={`font-bold ${
+														active
+															? "text-white"
+															: "text-red-500 "
+													}`}
+												>
+													Delete
+												</p>
+											</button>
+										)}
+									</Menu.Item>
+								)}
+
+								{/* REPORT BUTTON */}
+								{commentData.user.name !== yourData?.name && (
+									<Menu.Item>
+										{({ active }) => (
+											<button
+												className={`${
+													active
+														? "bg-violet-500 text-white"
+														: "text-gray-900"
+												} group flex gap-2 w-full items-center transition-all duration-300 rounded-md px-2 py-2 text-sm`}
+											>
+												<HiFlag className="w-5 h-5" />
+												<p className={`font-bold`}>
+													Report
+												</p>
+											</button>
+										)}
+									</Menu.Item>
+								)}
+							</div>
+						</Menu.Items>
+					</Transition>
+				</Menu>
 			</div>
+
 			<AnimatePresence
 				initial={false}
 				mode="wait"

@@ -1,17 +1,6 @@
 import React, { Dispatch, FC, useState } from "react";
-import Modal from "./Modal";
-import {
-	Action,
-	ProfileState,
-	PROFILE_ACTION,
-} from "../../reducers/profileReducer";
-import {
-	UserPreferences,
-	Posts,
-	Follows,
-	Comments,
-	Interests,
-} from "@prisma/client";
+import Modal from "@components/modal/Modal";
+import { Action, ProfileState, PROFILE_ACTION } from "@reducers/profileReducer";
 
 type EditProfileModalProps = {
 	modalOpen: boolean;
@@ -27,49 +16,48 @@ const EditProfileModal: FC<EditProfileModalProps> = ({
 	dispatch,
 }) => {
 	// USER PROFILE STATE
-	const [FirstName, setFirstName] = useState(
-		profileState.profile.preferences?.FirstName ?? ""
+	const [firstName, setFirstName] = useState(
+		profileState.preferences?.firstName ?? ""
 	);
-	const [LastName, setLastName] = useState(
-		profileState.profile.preferences?.LastName ?? ""
+	const [lastName, setLastName] = useState(
+		profileState.preferences?.lastName ?? ""
 	);
-	const [Pronouns, setPronouns] = useState(
-		profileState.profile.preferences?.Pronouns ?? ""
+	const [pronouns, setPronouns] = useState(
+		profileState.preferences?.pronouns ?? ""
 	);
-	const [Bio, setBio] = useState(profileState.profile.preferences?.Bio ?? "");
-	const [CountryRegion, setCountryRegion] = useState(
-		profileState.profile.preferences?.CountryRegion ?? ""
+	const [bio, setBio] = useState(profileState.preferences?.bio ?? "");
+	const [countryRegion, setCountryRegion] = useState(
+		profileState.preferences?.countryRegion ?? ""
 	);
-	const [PostalCode, setPostalCode] = useState(
-		profileState.profile.preferences?.PostalCode ?? ""
+	const [postalCode, setPostalCode] = useState(
+		profileState.preferences?.postalCode ?? ""
 	);
-	const [City, setCity] = useState(
-		profileState.profile.preferences?.City ?? ""
+	const [city, setCity] = useState(profileState.preferences?.city ?? "");
+	const [school, setSchool] = useState(
+		profileState.preferences?.school ?? ""
 	);
-	const [School, setSchool] = useState(
-		profileState.profile.preferences?.School ?? ""
-	);
-	const [Phone, setPhone] = useState(profileState.profile.phoneNumber ?? "");
-	const [PhoneType, setPhoneType] = useState(
-		profileState.profile.preferences?.PhoneType ?? ""
+	const [phoneNumber, setPhone] = useState(profileState.phoneNumber ?? "");
+	const [phoneType, setPhoneType] = useState(
+		profileState.preferences?.phoneType ?? ""
 	);
 
 	const handleSubmit = async () => {
 		const body = {
-			FirstName,
-			LastName,
-			Pronouns,
-			Bio,
-			CountryRegion,
-			PostalCode,
-			City,
-			School,
-			phoneNumber: Phone,
-			PhoneType,
+			firstName,
+			lastName,
+			pronouns,
+			bio,
+			countryRegion,
+			postalCode,
+			city,
+			school,
+			phoneNumber,
+			phoneType,
 		};
 		try {
+			// POSTING TO api/user-preferences/update/[email]
 			const response = await fetch(
-				`http://localhost:3000/api/user-preferences/update/${profileState.profile.email}`,
+				`http://localhost:3000/api/user-preferences/update/${profileState.email}`,
 				{
 					method: "PUT",
 					body: JSON.stringify(body),
@@ -111,7 +99,7 @@ const EditProfileModal: FC<EditProfileModalProps> = ({
 				<label className="text-sm">First name</label>
 				<input
 					type="text"
-					value={FirstName}
+					value={firstName}
 					onChange={(e) => setFirstName(e.target.value)}
 					className="p-2 rounded-xl border-2 outline-1"
 				/>
@@ -119,14 +107,14 @@ const EditProfileModal: FC<EditProfileModalProps> = ({
 				<label className="text-sm mt-4">Last name</label>
 				<input
 					type="text"
-					value={LastName}
+					value={lastName}
 					onChange={(e) => setLastName(e.target.value)}
 					className="p-2 rounded-xl border-[2px] outline-1"
 				/>
 
 				<label className="text-sm mt-4">Pronouns</label>
 				<select
-					value={Pronouns}
+					value={pronouns}
 					onChange={(e) => setPronouns(e.target.value)}
 					className="p-2 rounded-xl border-[2px] outline-1"
 				>
@@ -138,7 +126,7 @@ const EditProfileModal: FC<EditProfileModalProps> = ({
 
 				<label className="text-sm mt-4">Bio</label>
 				<textarea
-					value={Bio}
+					value={bio}
 					onChange={(e) => setBio(e.target.value)}
 					className="rounded-xl p-2 h-36 outline-1 border-[2px] resize-none"
 				/>
@@ -149,7 +137,7 @@ const EditProfileModal: FC<EditProfileModalProps> = ({
 				<label className="text-sm mt-4">Country/Region</label>
 				<input
 					type="text"
-					value={CountryRegion}
+					value={countryRegion}
 					onChange={(e) => setCountryRegion(e.target.value)}
 					className="p-2 rounded-xl border-[2px] outline-1"
 				/>
@@ -157,7 +145,7 @@ const EditProfileModal: FC<EditProfileModalProps> = ({
 				<label className="text-sm mt-4">Postal code</label>
 				<input
 					type="text"
-					value={PostalCode}
+					value={postalCode}
 					onChange={(e) => setPostalCode(e.target.value)}
 					className="p-2 rounded-xl border-[2px] outline-1"
 				/>
@@ -165,7 +153,7 @@ const EditProfileModal: FC<EditProfileModalProps> = ({
 				<label className="text-sm mt-4">City</label>
 				<input
 					type="text"
-					value={City}
+					value={city}
 					onChange={(e) => setCity(e.target.value)}
 					className="p-2 rounded-xl border-[2px] outline-1"
 				/>
@@ -176,7 +164,7 @@ const EditProfileModal: FC<EditProfileModalProps> = ({
 				<label className="text-sm mt-4">School</label>
 				<input
 					type="text"
-					value={School}
+					value={school}
 					onChange={(e) => setSchool(e.target.value)}
 					className="p-2 rounded-xl border-[2px] outline-1"
 				/>
@@ -187,14 +175,14 @@ const EditProfileModal: FC<EditProfileModalProps> = ({
 				<label className="text-sm mt-4">Phone number</label>
 				<input
 					type="text"
-					value={Phone}
+					value={phoneNumber}
 					onChange={(e) => setPhone(e.target.value)}
 					className="p-2 rounded-xl border-[2px] outline-1"
 				/>
 
 				<label className="text-sm mt-4">Phone type</label>
 				<select
-					value={PhoneType}
+					value={phoneType}
 					onChange={(e) => setPhoneType(e.target.value)}
 					className="p-2 rounded-xl border-[2px] outline-1"
 				>

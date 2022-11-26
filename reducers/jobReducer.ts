@@ -1,4 +1,4 @@
-import { JobListing } from "../lib/scraper/scraper";
+import { JobListing } from "@lib/scraper/scraper";
 
 export interface JobSearchState {
 	searchInput: string;

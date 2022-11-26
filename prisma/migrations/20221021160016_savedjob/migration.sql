@@ -1,0 +1,11 @@
+-- CreateTable
+CREATE TABLE `SavedJob` (
+    `SavedJobID` VARCHAR(191) NOT NULL,
+    `Link` VARCHAR(191) NOT NULL,
+    `UserID` VARCHAR(191) NOT NULL,
+
+    PRIMARY KEY (`SavedJobID`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- AddForeignKey
+ALTER TABLE `SavedJob` ADD CONSTRAINT `SavedJob_UserID_fkey` FOREIGN KEY (`UserID`) REFERENCES `User`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;

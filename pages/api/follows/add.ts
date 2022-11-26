@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { prisma } from "../../../lib/prisma";
+import { prisma } from "@lib/prisma";
 
 export default async function handler(
 	req: NextApiRequest,
@@ -9,7 +9,7 @@ export default async function handler(
 		res.status(500).json({ message: "Please use the POST method." });
 	} else {
 		const { followerId, followingId } = JSON.parse(req.body);
-		await prisma.follows
+		await prisma.follow
 			.create({
 				data: {
 					followerId,

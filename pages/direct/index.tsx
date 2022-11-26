@@ -1,20 +1,18 @@
+"DIRECT MESSAGES PAGE";
+
 import React, { useEffect, useReducer } from "react";
-import Modal from "../../components/modal/Modal";
 import { NextPage } from "next";
-import Navbar from "../../components/nav/Navbar";
 import Head from "next/head";
 import { FaPaperPlane, FaPenSquare } from "react-icons/fa";
 import { useRouter } from "next/router";
 import { useSession } from "next-auth/react";
 import io from "socket.io-client";
 import { useQuery } from "react-query";
-import ChatSection from "../../components/chat/ChatSection";
-import {
-	ChatState,
-	chatReducer,
-	FollowResponse,
-} from "../../reducers/chatReducer";
-import { useModal } from "../../hooks/useModal";
+import ChatSection from "@components/chat/ChatSection";
+import { ChatState, chatReducer, FollowResponse } from "@reducers/chatReducer";
+import { useModal } from "@hooks/useModal";
+import Modal from "@components/modal/Modal";
+import Navbar from "@components/nav/Navbar";
 import { AnimatePresence } from "framer-motion";
 import {
 	selectChatID,
@@ -139,7 +137,7 @@ const DirectMessagesPage: NextPage = () => {
 			newSocket.emit("disconnecting chat", data?.user?.email);
 			newSocket.disconnect();
 		};
-	}, [data]);
+	}, []);
 
 	return (
 		<>
@@ -179,19 +177,23 @@ const DirectMessagesPage: NextPage = () => {
 
 								{/* CHAT LISTING */}
 								{chatData?.map((chat) => {
-									const guy = chat.Participants.find(
+									console.log(
+										"chat data:",
+										JSON.stringify(chat, null, 4)
+									);
+									const guy = chat.participants?.find(
 										(participant) =>
-											participant.User.name !==
+											participant.user.name !==
 											data?.user?.name
 									);
 									return (
 										<div
-											key={chat.ChatID}
+											key={chat.id}
 											// SWITCHING CHATS
 											onClick={() => {
 												dispatch(
 													selectChatID({
-														chatID: chat.ChatID,
+														chatID: chat.id,
 														yourUsername: data?.user
 															?.name as string,
 													})
@@ -199,12 +201,12 @@ const DirectMessagesPage: NextPage = () => {
 												router.push({
 													pathname: "/direct",
 													query: {
-														chat: chat.ChatID,
+														chat: chat.id,
 													},
 												});
 											}}
 											className={`w-full flex justify-start hover:bg-indigo-100 transition-all cursor-pointer items-center gap-3 py-2 px-3 ${
-												guy?.ChatID ===
+												guy?.chatID ===
 												chatState.selectedChatID
 													? "bg-indigo-100"
 													: ""
@@ -214,7 +216,7 @@ const DirectMessagesPage: NextPage = () => {
 											<div className="relative">
 												<img
 													src={
-														guy?.User.image ??
+														guy?.user.image ??
 														"https://i.pinimg.com/736x/dd/f0/11/ddf0110aa19f445687b737679eec9cb2.jpg"
 													}
 													onError={(e) => {
@@ -236,14 +238,14 @@ const DirectMessagesPage: NextPage = () => {
 												{/* LITTLE ONLINE INDICATOR CIRCLE */}
 												<div
 													className={`absolute border-2 border-white -bottom-0 right-0 w-4 h-4 rounded-full ${
-														guy?.User.online
+														guy?.user.online
 															? "bg-green-500"
 															: "bg-gray-500"
 													}`}
 												></div>
 											</div>
 											<h4 className="font-semibold">
-												{guy?.User.name}
+												{guy?.user.name}
 											</h4>
 										</div>
 									);

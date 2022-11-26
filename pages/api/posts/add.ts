@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { prisma } from "../../../lib/prisma";
+import { prisma } from "@lib/prisma";
 
 export default async function handler(
 	req: NextApiRequest,
@@ -8,17 +8,21 @@ export default async function handler(
 	if (req.method !== "POST") {
 		res.status(500).json({ message: "Please use the POST method." });
 	} else {
-		const { UserID, DatePosted, PostText, Image, ImageRef } = JSON.parse(
-			req.body
-		);
-		await prisma.posts
+		const {
+			UserID: userID,
+			DatePosted: datePosted,
+			PostText: postText,
+			Image: image,
+			ImageRef: imageRef,
+		} = JSON.parse(req.body);
+		await prisma.post
 			.create({
 				data: {
-					UserID,
-					DatePosted,
-					PostText,
-					Image,
-					ImageRef,
+					userID,
+					datePosted,
+					postText,
+					image,
+					imageRef,
 				},
 			})
 			.then((response) => {

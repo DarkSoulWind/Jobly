@@ -24,10 +24,11 @@ export default async function handler(
 	const studentJobResults = new StudentJobScraper(search, location);
 	await studentJobResults.scrape();
 
-	res.json({
+	const results = {
 		keyword: search,
 		location,
 		results: [...reedResults.results, ...studentJobResults.results],
-	});
+	};
+	res.json(results);
 	// res.json({ keyword: search, location, results: studentJobResults.results });
 }

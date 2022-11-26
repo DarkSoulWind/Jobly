@@ -1,7 +1,7 @@
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/router";
 import React, { ReactNode } from "react";
-import ProtectedRoute from "./ProtectedRoute";
+import ProtectedRoute from "@components/auth/ProtectedRoute";
 
 // routes that can only be accessed if the user is logged in
 const authRoutes = [
@@ -11,6 +11,7 @@ const authRoutes = [
 	"/search",
 	"/post",
 	"/connect",
+	"/jobs/saved",
 ];
 
 const AuthWrapper = ({ children }: { children: ReactNode }) => {

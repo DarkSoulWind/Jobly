@@ -1,11 +1,9 @@
 import { useRouter } from "next/router";
 import Link from "next/link";
 import React from "react";
-import Navbar from "../components/nav/Navbar";
+import Navbar from "@components/nav/Navbar";
 
 const PageNotFound = () => {
-	const router = useRouter();
-
 	return (
 		<div>
 			<Navbar />

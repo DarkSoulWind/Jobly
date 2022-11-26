@@ -1,42 +1,52 @@
+"JOB POST PAGE";
+
 import React, { useEffect, useRef, useState } from "react";
 import type { GetStaticPropsContext, NextPage } from "next";
 import {
-	Posts,
+	Post,
 	User,
-	UserPreferences,
-	PostLikes,
-	Comments,
+	UserPreference,
+	PostLike,
+	Comment,
+	Follow,
 } from "@prisma/client";
-import { prisma } from "../../../lib/prisma";
-import Navbar from "../../../components/nav/Navbar";
+import { prisma } from "@lib/prisma";
+import Navbar from "@components/nav/Navbar";
 import Head from "next/head";
-import PostComponent from "../../../components/post/Post";
+import PostComponent from "@components/post/Post";
 import { useRouter } from "next/router";
 import { useSession } from "next-auth/react";
-import Comment from "../../../components/comments/Comment";
+import { useQuery } from "react-query";
+import CommentComponent from "@components/comments/Comment";
 
-type PostPageProps = {
+// CANNOT USE INFER GET SERVER SIDE PROPS
+interface PostPageProps {
 	postData:
-		| Posts & {
-				User: User & {
-					preferences: UserPreferences | null;
+		| Post & {
+				user: User & {
+					preferences: UserPreference | null;
 				};
-				PostLikes: PostLikes[];
-				Comments: Comments[];
+				comments: Comment[];
+				postLikes: PostLike[];
 		  };
 	posterData:
 		| (User & {
-				preferences: UserPreferences | null;
+				preferences: UserPreference | null;
 		  })
 		| null;
-	commentData: (Comments & {
-		User: User & {
-			preferences: UserPreferences | null;
+	commentData: (Comment & {
+		user: User & {
+			preferences: UserPreference | null;
 		};
 	})[];
-};
+}
 
-type UserWithPreferences = User & { preferences: UserPreferences | null };
+type UserWithPreferences = {
+	preferences: UserPreference | null;
+	followers: Follow[];
+	following: Follow[];
+	id: string;
+} | null;
 
 const PostPage: NextPage<PostPageProps> = ({
 	postData,
@@ -45,29 +55,36 @@ const PostPage: NextPage<PostPageProps> = ({
 }) => {
 	const router = useRouter();
 	const { status, data } = useSession();
+	console.log(commentData);
 
 	// STATE AND REFS
 	const commentInputRef = useRef<HTMLInputElement>(null);
 	const [CommentText, setCommentText] = useState("");
 
 	// YOUR DATA
-	const [yourData, setYourData] = useState<UserWithPreferences | null>();
+	// const [yourData, setYourData] = useState<UserWithPreferences | null>();
 
-	useEffect(() => {
-		const getUserByEmail = async () => {
-			if (status === "authenticated") {
-				const response = await fetch(
-					`http://localhost:3000/api/user/email/${data.user?.email}`
-				);
-				const responseData: UserWithPreferences | null =
-					await response.json();
-				console.log("YOUR DATA:", responseData);
-				setYourData(responseData);
-			}
-		};
+	const getUserByEmail = async () => {
+		if (status === "authenticated") {
+			const response = await fetch(
+				`http://localhost:3000/api/user/email/${data.user?.email}`
+			);
+			const responseData: UserWithPreferences | null =
+				await response.json();
+			console.log(
+				"YOUR DATA FROM RQ",
+				JSON.stringify(responseData, null, 4)
+			);
+			return responseData;
+		}
+	};
 
-		getUserByEmail();
-	}, [data, setYourData]);
+	const { data: yourData } = useQuery("yourData", getUserByEmail);
+
+	// useEffect(() => {
+
+	// 	getUserByEmail();
+	// }, []);
 
 	const postComment = async () => {
 		if (CommentText.trim().length < 5) return;
@@ -76,7 +93,7 @@ const PostPage: NextPage<PostPageProps> = ({
 			const body = {
 				CommentText,
 				UserID: yourData?.id,
-				PostID: postData?.PostID,
+				PostID: postData?.id,
 				DatePosted: new Date(Date.now()).toISOString(),
 			};
 			console.log("Posting...");
@@ -106,10 +123,10 @@ const PostPage: NextPage<PostPageProps> = ({
 		<div className="overflow-clip">
 			<Head>
 				<title>
-					{posterData?.name} | "{postData?.PostText.substring(0, 30)}
-					{postData && postData?.PostText.length > 30 ? "..." : ""}"
+					{posterData?.name} | "{postData?.postText.substring(0, 30)}
+					{postData && postData?.postText.length > 30 ? "..." : ""}"
 				</title>
-				<meta name="description" content={postData?.PostText} />
+				<meta name="description" content={postData?.postText} />
 			</Head>
 
 			<Navbar />
@@ -122,7 +139,7 @@ const PostPage: NextPage<PostPageProps> = ({
 					<div className="fixed w-[15rem] overflow-clip grid grid-cols-1 bg-white border-[1px] border-slate-300 rounded-lg">
 						<img
 							src={
-								posterData?.preferences?.Banner ??
+								posterData?.preferences?.banner ??
 								"https://swall.teahub.io/photos/small/303-3034192_default-banner-banner-jpg.jpg"
 							}
 							alt="banner"
@@ -152,12 +169,12 @@ const PostPage: NextPage<PostPageProps> = ({
 							</div>
 							<div className="pt-9 pb-4 text-center">
 								<h3 className="font-bold text-md">
-									{posterData?.preferences?.FirstName ??
+									{posterData?.preferences?.firstName ??
 										posterData?.name}{" "}
-									{posterData?.preferences?.LastName ?? ""}
+									{posterData?.preferences?.lastName ?? ""}
 								</h3>
 								<h4 className="text-sm text-slate-500">
-									{posterData?.preferences?.Bio ??
+									{posterData?.preferences?.bio ??
 										"Empty bio"}
 								</h4>
 								<button
@@ -231,12 +248,12 @@ const PostPage: NextPage<PostPageProps> = ({
 						{/* COMMENTS */}
 						<div className="w-full flex flex-col items-start justify-start gap-3">
 							{commentData?.map((comment) => (
-								<div className="w-full" key={comment.CommentID}>
-									<Comment
+								<div className="w-full" key={comment.id}>
+									<CommentComponent
 										commentData={comment}
 										author={
 											posterData?.email ===
-											comment.User.email
+											comment.user.email
 										}
 										yourData={yourData}
 									/>
@@ -254,14 +271,14 @@ const PostPage: NextPage<PostPageProps> = ({
 };
 
 export async function getStaticPaths() {
-	const data = await prisma.posts.findMany({
+	const data = await prisma.post.findMany({
 		select: {
-			PostID: true,
+			id: true,
 		},
 	});
 
 	const paths = data.map((post) => ({
-		params: { postID: post.PostID.toString() },
+		params: { postID: post.id.toString() },
 	}));
 
 	return { paths, fallback: false };
@@ -269,14 +286,14 @@ export async function getStaticPaths() {
 
 export async function getStaticProps(context: GetStaticPropsContext) {
 	const { postID } = context.params as { postID: string };
-	const postData = await prisma.posts.findUnique({
+	const postData = await prisma.post.findUnique({
 		where: {
-			PostID: parseInt(postID),
+			id: postID,
 		},
 		include: {
-			PostLikes: true,
-			Comments: true,
-			User: {
+			postLikes: true,
+			comments: true,
+			user: {
 				include: {
 					preferences: true,
 				},
@@ -285,18 +302,18 @@ export async function getStaticProps(context: GetStaticPropsContext) {
 	});
 	const posterData = await prisma.user.findUnique({
 		where: {
-			id: postData?.UserID,
+			id: postData?.userID,
 		},
 		include: {
 			preferences: true,
 		},
 	});
-	const commentData = await prisma.comments.findMany({
+	const commentData = await prisma.comment.findMany({
 		where: {
-			PostID: parseInt(postID),
+			postID,
 		},
 		include: {
-			User: {
+			user: {
 				include: {
 					preferences: true,
 				},

@@ -1,6 +1,5 @@
-import { request } from "http";
 import type { NextApiRequest, NextApiResponse } from "next";
-import { prisma } from "../../../lib/prisma";
+import { prisma } from "@lib/prisma";
 
 // create a new chat
 // add new participants
@@ -20,19 +19,21 @@ export default async function handler(
 			chatname: string;
 			participants: { userid: string }[];
 		} = JSON.parse(req.body);
+
 		await prisma.chat
 			.create({
 				data: {
-					ChatID: chatid,
-					Name: chatname,
+					id: chatid,
+					name: chatname,
 				},
 			})
 			.then(async (response) => {
 				return await prisma.participant.createMany({
+					// creates participants records based on the array of participants from the request body
 					data: [
 						...participants.map((participant) => ({
-							UserID: participant.userid,
-							ChatID: response.ChatID,
+							userID: participant.userid,
+							chatID: response.id,
 						})),
 					],
 				});

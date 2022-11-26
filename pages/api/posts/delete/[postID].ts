@@ -1,6 +1,5 @@
-import { request } from "http";
 import type { NextApiRequest, NextApiResponse } from "next";
-import { prisma } from "../../../../lib/prisma";
+import { prisma } from "@lib/prisma";
 
 export default async function handler(
 	req: NextApiRequest,
@@ -10,10 +9,10 @@ export default async function handler(
 		res.status(500).json({ message: "Please use the POST method." });
 	} else {
 		const { postID } = req.query;
-		await prisma.posts
+		await prisma.post
 			.delete({
 				where: {
-					PostID: parseInt(postID as string),
+					id: postID as string,
 				},
 			})
 			.then((response) => {

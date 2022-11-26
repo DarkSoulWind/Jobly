@@ -1,6 +1,6 @@
 import { NotFoundError } from "@prisma/client/runtime";
 import type { NextApiRequest, NextApiResponse } from "next";
-import { prisma } from "../../../../lib/prisma";
+import { prisma } from "@lib/prisma";
 
 export default async function handler(
 	req: NextApiRequest,
@@ -11,27 +11,27 @@ export default async function handler(
 	} else {
 		const { email } = req.query;
 		const {
-			FirstName,
-			LastName,
-			Pronouns,
-			Bio,
-			CountryRegion,
-			PostalCode,
-			City,
-			School,
+			firstName,
+			lastName,
+			pronouns,
+			bio,
+			countryRegion,
+			postalCode,
+			city,
+			school,
 			phoneNumber,
-			PhoneType,
+			phoneType,
 		} = JSON.parse(req.body);
 		const updatedPreferences = {
-			FirstName,
-			LastName,
-			Pronouns,
-			Bio,
-			CountryRegion,
-			PostalCode,
-			City,
-			School,
-			PhoneType,
+			firstName,
+			lastName,
+			pronouns,
+			bio,
+			countryRegion,
+			postalCode,
+			city,
+			school,
+			phoneType,
 		};
 		let data = {};
 		// First find the user id using the email
@@ -46,10 +46,10 @@ export default async function handler(
 				console.log("Found user id", id, "from", response?.name);
 				// Try to update the preferences first, if there is an error that means there are no preferences
 				// for that user. In this case we will have to create the preferences.
-				await prisma.userPreferences
+				await prisma.userPreference
 					.update({
 						where: {
-							UserID: id,
+							userID: id,
 						},
 						data: {
 							...updatedPreferences,
@@ -66,10 +66,10 @@ export default async function handler(
 						console.log(
 							"Not preferences for this user so creating them"
 						);
-						await prisma.userPreferences
+						await prisma.userPreference
 							.create({
 								data: {
-									UserID: id,
+									userID: id,
 									...updatedPreferences,
 								},
 							})

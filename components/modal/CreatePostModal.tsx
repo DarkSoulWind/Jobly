@@ -1,6 +1,6 @@
 import React, { ChangeEvent, Dispatch, FC, useRef, useState } from "react";
 import Modal from "./Modal";
-import { User, Posts } from "@prisma/client";
+import { User, Post } from "@prisma/client";
 import { Action as FeedAction, FEED_ACTION } from "../../reducers/feedReducer";
 import { FaHashtag, FaImage, FaTimesCircle } from "react-icons/fa";
 import { useRouter } from "next/router";
@@ -104,7 +104,7 @@ const CreatePostModal: FC<CreatePostModalProps> = ({
 					body: JSON.stringify(body),
 				}
 			);
-			const data: Posts = await response.json();
+			const data: Post = await response.json();
 
 			if (!response.ok) {
 				throw new Error(JSON.stringify(data, null, 4));
@@ -116,7 +116,7 @@ const CreatePostModal: FC<CreatePostModalProps> = ({
 				type: FEED_ACTION.SET_SUCCESS_MESSAGE,
 				payload: { success: "Posted successfully!" },
 			});
-			router.push(`/post/${data.PostID}`);
+			router.push(`/post/${data.id}`);
 		} catch (error) {
 			dispatch({
 				type: FEED_ACTION.SET_ERROR_MESSAGE,

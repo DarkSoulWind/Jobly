@@ -1,6 +1,5 @@
 import { Chat, Participant } from "@prisma/client";
 import { Socket } from "socket.io-client";
-import { addAbortSignal } from "stream";
 
 // the different kinds of chat actions that can be dispatched
 export enum CHAT_ACTION {
@@ -23,10 +22,10 @@ export type AllFollows = {
 
 // THE TYPE OF CHATS THAT WE GET FROM /api/chats/email/[email]
 export type Chats = (Chat & {
-	Participants: (Participant & {
-		User: {
-			name: string;
+	participants: (Participant & {
+		user: {
 			image: string | null;
+			name: string;
 			online: boolean;
 		};
 	})[];

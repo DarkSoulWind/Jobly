@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { prisma } from "../../../../lib/prisma";
+import { prisma } from "@lib/prisma";
 
 export default async function handler(
 	req: NextApiRequest,
@@ -13,18 +13,18 @@ export default async function handler(
 		await prisma.chat
 			.findMany({
 				where: {
-					Participants: {
+					participants: {
 						some: {
-							User: {
+							user: {
 								email: email as string,
 							},
 						},
 					},
 				},
 				include: {
-					Participants: {
+					participants: {
 						include: {
-							User: {
+							user: {
 								select: {
 									name: true,
 									image: true,

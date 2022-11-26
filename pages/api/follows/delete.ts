@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { prisma } from "../../../lib/prisma";
+import { prisma } from "@lib/prisma";
 
 export default async function handler(
 	req: NextApiRequest,
@@ -12,7 +12,7 @@ export default async function handler(
 			followerId,
 			followingId,
 		}: { followerId: string; followingId: string } = JSON.parse(req.body);
-		await prisma.follows
+		await prisma.follow
 			.delete({
 				where: { followerId_followingId: { followerId, followingId } },
 				select: {

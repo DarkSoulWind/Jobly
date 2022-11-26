@@ -1,4 +1,3 @@
-import { Chat, Participant } from "@prisma/client";
 import { Socket } from "socket.io-client";
 import { AllFollows, Chats, CHAT_ACTION } from "../actions/types/chat";
 
@@ -22,14 +21,16 @@ export type FollowResponse = {
 
 // THE TYPE OF RESPONSE WE GET FROM /api/messages/[chatID]
 export type Message = {
-	MessageID: string;
-	Text: string;
-	DatePosted: Date;
-	Received: boolean;
-	Sender: {
+	text: string;
+	id: string;
+	sender: {
 		image: string | null;
 		name: string;
 	};
+	chatID: string;
+	senderID: string;
+	datePosted: Date;
+	received: boolean;
 };
 
 // THE TYPE FOR THE GLOBAL CHAT STATE
@@ -72,11 +73,11 @@ export const chatReducer = (state: ChatState, action: Action): ChatState => {
 				action.payload.chatID
 			);
 			const newUsername = state.chats
-				?.find((chat) => chat.ChatID === state.selectedChatID)
-				?.Participants.find(
+				?.find((chat) => chat.id === state.selectedChatID)
+				?.participants.find(
 					(participant) =>
-						participant.User.name !== action.payload.yourUsername
-				)?.User.name;
+						participant.user.name !== action.payload.yourUsername
+				)?.user.name;
 			console.log("selected username", newUsername);
 			return {
 				...state,
@@ -113,12 +114,12 @@ export const chatReducer = (state: ChatState, action: Action): ChatState => {
 				chats: state.chats?.map((chat) => {
 					return {
 						...chat,
-						Participants: chat.Participants.map((participant) => {
-							participant.User.online =
-								participant.User.name ===
+						Participants: chat.participants.map((participant) => {
+							participant.user.online =
+								participant.user.name ===
 								action.payload.username
 									? (action.payload.onlineStatus as boolean)
-									: participant.User.online;
+									: participant.user.online;
 							return participant;
 						}),
 					};
@@ -128,17 +129,14 @@ export const chatReducer = (state: ChatState, action: Action): ChatState => {
 		case CHAT_ACTION.NEW_MESSAGE:
 			return {
 				...state,
-				messages: [
-					...state.messages,
-					action.payload.newMessage as Message,
-				],
+				messages: [...state.messages, action.payload.newMessage!],
 			};
 
 		case CHAT_ACTION.DELETE_MESSAGE:
 			return {
 				...state,
 				messages: state.messages.filter(
-					(message) => message.MessageID !== action.payload.messageID
+					(message) => message.id !== action.payload.messageID
 				),
 			};
 

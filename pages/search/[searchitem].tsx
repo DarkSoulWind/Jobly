@@ -1,19 +1,23 @@
-import { UserPreferences } from "@prisma/client";
-import { GetServerSidePropsContext, NextPage } from "next";
+import { UserPreference } from "@prisma/client";
+import {
+	GetServerSidePropsContext,
+	InferGetServerSidePropsType,
+	NextPage,
+} from "next";
 import Head from "next/head";
 import { useRouter } from "next/router";
 import React, { useState } from "react";
-import Footer from "../../components/footer/Footer";
-import Navbar from "../../components/nav/Navbar";
-import CommentResults from "../../components/search/CommentResults";
-import PostResults from "../../components/search/PostResults";
-import UserResults from "../../components/search/UserResults";
-import { prisma } from "../../lib/prisma";
+import Footer from "@components/footer/Footer";
+import Navbar from "@components/nav/Navbar";
+import CommentResults from "@components/search/CommentResults";
+import PostResults from "@components/search/PostResults";
+import UserResults from "@components/search/UserResults";
+import { prisma } from "@lib/prisma";
 
 export interface SearchResults {
 	users: {
 		image: string | null;
-		preferences: UserPreferences | null;
+		preferences: UserPreference | null;
 		name: string;
 	}[];
 	posts: {
@@ -37,7 +41,9 @@ interface SearchPageProps {
 
 type Filter = "Users" | "Posts" | "Comments";
 
-const SearchPage: NextPage<SearchPageProps> = (props) => {
+const SearchPage: NextPage<
+	InferGetServerSidePropsType<typeof getServerSideProps>
+> = (props) => {
 	const router = useRouter();
 
 	const filters: Filter[] = ["Users", "Posts", "Comments"];
@@ -132,8 +138,8 @@ export const getServerSideProps = async (
 		where: {
 			OR: [
 				{ name: { contains: searchitem } },
-				{ preferences: { FirstName: { contains: searchitem } } },
-				{ preferences: { LastName: { contains: searchitem } } },
+				{ preferences: { firstName: { contains: searchitem } } },
+				{ preferences: { lastName: { contains: searchitem } } },
 			],
 		},
 		select: {
@@ -143,15 +149,15 @@ export const getServerSideProps = async (
 		},
 	});
 
-	const posts = await prisma.posts.findMany({
+	const posts = await prisma.post.findMany({
 		where: {
-			OR: [{ PostText: { contains: searchitem } }],
+			OR: [{ postText: { contains: searchitem } }],
 		},
 		select: {
-			PostID: true,
-			PostText: true,
-			Image: true,
-			User: {
+			id: true,
+			postText: true,
+			image: true,
+			user: {
 				select: {
 					name: true,
 				},
@@ -159,13 +165,13 @@ export const getServerSideProps = async (
 		},
 	});
 
-	const comments = await prisma.comments.findMany({
+	const comments = await prisma.comment.findMany({
 		where: {
-			OR: [{ CommentText: { contains: searchitem } }],
+			OR: [{ commentText: { contains: searchitem } }],
 		},
 		select: {
-			PostID: true,
-			CommentText: true,
+			postID: true,
+			commentText: true,
 		},
 	});
 

@@ -1,7 +1,10 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import cheerio from "cheerio";
-import { JobPreview, Scraper, SiteType } from "../../../lib/scraper/scraper";
-import ReedScraper from "../../../lib/scraper/reedScraper";
+import { ReedScraper, SiteType } from "@lib/scraper";
+
+interface body {
+	link: string;
+	type: SiteType;
+}
 
 export default async function handler(
 	req: NextApiRequest,
@@ -10,17 +13,24 @@ export default async function handler(
 	if (req.method !== "POST") {
 		res.status(403).json({ message: "Please use the POST method only." });
 	} else {
-		const { link, type } = JSON.parse(req.body) as {
-			link: string;
-			type: SiteType;
-		};
-
-		switch (type) {
-			case "Reed":
-				const results = await ReedScraper.scrapePreview(link);
-				res.json(results);
-				console.log(results);
-				break;
+		try {
+			const { link, type } = JSON.parse(req.body) as body;
+			const results = await getResults(type, link);
+			console.log(results);
+			res.json({ ...results, link, type });
+		} catch (e) {
+			const { link, type } = req.body as body;
+			const results = await getResults(type, link);
+			console.log(results);
+			res.json({ ...results, link, type });
 		}
+	}
+}
+
+async function getResults(type: string, link: string) {
+	switch (type) {
+		case "Reed":
+			const results = await ReedScraper.scrapePreview(link);
+			return results;
 	}
 }

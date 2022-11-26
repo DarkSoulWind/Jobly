@@ -23,7 +23,7 @@ model Account {
   user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
-  @@index([userId], map: "Account_userId_fkey")
+  @@index([userId])
 }
 
 model Session {
@@ -33,29 +33,30 @@ model Session {
   expires      DateTime
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@index([userId], map: "Session_userId_fkey")
+  @@index([userId])
 }
 
 model User {
-  email         String?          @unique
+  email         String?         @unique
   emailVerified DateTime?
-  id            String           @id @default(cuid())
-  image         String?          @default("https://i.pinimg.com/236x/8e/73/0c/8e730ce55fb0199e7dc0bf76672e8dc6.jpg")
-  name          String           @unique
+  id            String          @id @default(cuid())
+  image         String?         @default("https://i.pinimg.com/236x/8e/73/0c/8e730ce55fb0199e7dc0bf76672e8dc6.jpg")
+  name          String          @unique
   password      String?
   phoneNumber   String?
-  online        Boolean          @default(false)
+  online        Boolean         @default(false)
   accounts      Account[]
-  Comments      Comments[]
-  following     Follows[]        @relation("follower")
-  followers     Follows[]        @relation("following")
-  interests     Interests[]
-  SentMessages  Message[]        @relation("sender")
-  Participants  Participant[]
-  postLikes     PostLikes[]
-  posts         Posts[]
+  comments      Comment[]
+  following     Follow[]        @relation("follower")
+  followers     Follow[]        @relation("following")
+  interests     UserInterest[]
+  sentMessages  Message[]       @relation("sender")
+  participants  Participant[]
+  postLikes     PostLike[]
+  posts         Post[]          @relation("posts")
   sessions      Session[]
-  preferences   UserPreferences?
+  savedJobs     SavedJob[]      @relation("user")
+  preferences   UserPreference?
 }
 
 model VerificationToken {
@@ -66,105 +67,123 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
-model UserPreferences {
-  PreferencesID Int     @id @unique @default(autoincrement())
-  UserID        String  @unique
-  FirstName     String?
-  LastName      String?
-  Pronouns      String?
-  CountryRegion String?
-  PostalCode    String?
-  City          String?
-  School        String?
-  PhoneType     String?
-  Banner        String? @default("https://swall.teahub.io/photos/small/303-3034192_default-banner-banner-jpg.jpg")
-  Bio           String?
-  User          User    @relation(fields: [UserID], references: [id], onDelete: Cascade)
+model UserPreference {
+  id            Int     @id @unique @default(autoincrement())
+  userID        String  @unique
+  firstName     String?
+  lastName      String?
+  pronouns      String?
+  countryRegion String?
+  postalCode    String?
+  city          String?
+  school        String?
+  phoneType     String?
+  banner        String? @default("https://swall.teahub.io/photos/small/303-3034192_default-banner-banner-jpg.jpg")
+  bio           String?
+  user          User    @relation(fields: [userID], references: [id], onDelete: Cascade)
 }
 
-model Posts {
-  PostID     Int         @id @default(autoincrement())
-  UserID     String      
-  DatePosted DateTime
-  PostText   String      @db.Text
-  Image      String?
-  ImageRef   String?
-  User       User        @relation(fields: [UserID], references: [id], onDelete: Cascade)
-  Comments   Comments[]
-  PostLikes  PostLikes[]
+model Post {
+  id         String     @id @default(uuid())
+  userID     String
+  datePosted DateTime
+  postText   String     @db.Text
+  image      String?
+  imageRef   String?
+  user       User       @relation("posts", fields: [userID], references: [id], onDelete: Cascade)
+  comments   Comment[]
+  postLikes  PostLike[]
 }
 
-model PostLikes {
-  LikeID Int    @id @default(autoincrement())
-  UserID String
-  PostID Int
-  Post   Posts  @relation(fields: [PostID], references: [PostID], onDelete: Cascade)
-  User   User   @relation(fields: [UserID], references: [id], onDelete: Cascade)
+model PostLike {
+  userID String
+  postID String
+  post   Post   @relation(fields: [postID], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userID], references: [id], onDelete: Cascade)
 
-  @@index([PostID], map: "PostLikes_PostID_fkey")
-  @@index([UserID], map: "PostLikes_UserID_fkey")
+  @@id([userID, postID])
 }
 
-model Interests {
-  InterestID Int    @id @default(autoincrement())
-  UserID     String
-  Name       String
-  User       User   @relation(fields: [UserID], references: [id], onDelete: Cascade)
-
-  @@index([UserID], map: "Interests_UserID_fkey")
+model Interest {
+  name   String @id @unique
+  interests UserInterest[]
 }
 
-model Follows {
+model UserInterest {
+  userID String
+  user User @relation(fields: [userID], references: [id], onDelete: Cascade)
+  name String
+  interest Interest @relation(fields: [name], references: [name], onDelete: Cascade)
+
+  @@id([userID, name])
+}
+
+model Follow {
   followerId  String
   followingId String
   follower    User   @relation("follower", fields: [followerId], references: [id])
   following   User   @relation("following", fields: [followingId], references: [id])
 
   @@id([followerId, followingId])
-  @@index([followingId], map: "Follows_followingId_fkey")
+  @@index([followerId, followingId])
 }
 
-model Comments {
-  CommentID   Int      @id @default(autoincrement())
-  UserID      String
-  PostID      Int
-  CommentText String
-  DatePosted  DateTime
-  Post        Posts    @relation(fields: [PostID], references: [PostID], onDelete: Cascade)
-  User        User     @relation(fields: [UserID], references: [id], onDelete: Cascade)
+model Comment {
+  id          String   @id @default(uuid())
+  userID      String
+  postID      String
+  commentText String
+  datePosted  DateTime
+  post        Post     @relation(fields: [postID], references: [id], onDelete: Cascade)
+  user        User     @relation(fields: [userID], references: [id], onDelete: Cascade)
 
-  @@index([PostID], map: "Comments_PostID_fkey")
-  @@index([UserID], map: "Comments_UserID_fkey")
+  @@index([postID])
+  @@index([userID])
 }
 
 model Chat {
-  ChatID       String        @id @default(uuid())
-  Name         String
-  Messages     Message[]
-  Participants Participant[]
+  id           String        @id @default(uuid())
+  name         String
+  messages     Message[] @relation("chat")
+  participants Participant[]
 }
 
 model Participant {
-  ParticipantID Int    @id @default(autoincrement())
-  UserID        String
-  ChatID        String
-  Chat          Chat   @relation(fields: [ChatID], references: [ChatID], onDelete: Cascade)
-  User          User   @relation(fields: [UserID], references: [id], onDelete: Cascade)
+  id     Int    @id @default(autoincrement())
+  userID String
+  chatID String
+  chat   Chat   @relation(fields: [chatID], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userID], references: [id], onDelete: Cascade)
 
-  @@index([ChatID], map: "Participant_ChatID_fkey")
-  @@index([UserID], map: "Participant_UserID_fkey")
+  @@index([chatID])
+  @@index([userID])
 }
 
 model Message {
-  MessageID  String   @id @default(cuid())
-  SenderID   String
-  ChatID     String
-  Text       String
-  DatePosted DateTime @default(now())
-  Received   Boolean  @default(false)
-  Chat       Chat     @relation(fields: [ChatID], references: [ChatID], onDelete: Cascade)
-  Sender     User     @relation("sender", fields: [SenderID], references: [id], onDelete: Cascade)
+  id         String   @id @default(uuid())
+  senderID   String
+  chatID     String
+  text       String
+  datePosted DateTime @default(now())
+  received   Boolean  @default(false)
+  chat       Chat     @relation("chat", fields: [chatID], references: [id], onDelete: Cascade)
+  sender     User     @relation("sender", fields: [senderID], references: [id], onDelete: Cascade)
 
-  @@index([ChatID], map: "Message_ChatID_fkey")
-  @@index([SenderID], map: "Message_SenderID_fkey")
+  @@index([chatID])
+  @@index([senderID])
+}
+
+model SavedJob {
+  id          String   @default(uuid())
+  link        String
+  title       String
+  employer    String
+  location    String
+  description String
+  type        String
+  dateAdded   DateTime @default(now())
+  userID      String
+  user        User     @relation("user", fields: [userID], references: [id], onDelete: Cascade)
+
+  @@id([userID, link])
 }

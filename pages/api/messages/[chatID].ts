@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { prisma } from "../../../lib/prisma";
+import { prisma } from "@lib/prisma";
 
 export default async function handler(
 	req: NextApiRequest,
@@ -8,18 +8,18 @@ export default async function handler(
 	if (req.method !== "GET") {
 		res.status(405).json({ message: "Please use the GET method." });
 	} else {
-		const { chatID } = req.query;
+		const { chatID } = req.query as { chatID: string };
 		await prisma.message
 			.findMany({
 				where: {
-					ChatID: chatID as string,
+					chatID,
 				},
 				select: {
-					MessageID: true,
-					Text: true,
-					DatePosted: true,
-					Received: true,
-					Sender: {
+					id: true,
+					text: true,
+					datePosted: true,
+					received: true,
+					sender: {
 						select: {
 							name: true,
 							image: true,
@@ -28,7 +28,7 @@ export default async function handler(
 					},
 				},
 				orderBy: {
-					DatePosted: "asc",
+					datePosted: "asc",
 				},
 			})
 			.then((response) => {

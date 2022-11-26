@@ -1,7 +1,7 @@
-import { Posts } from "@prisma/client";
+import { Post } from "@prisma/client";
 import type { NextApiRequest, NextApiResponse } from "next";
-import { Edge, getUserNodeByID, GraphNode } from "../../../../lib/graph";
-import { prisma } from "../../../../lib/prisma";
+import { Edge, getUserNodeByID, GraphNode } from "@lib/graphtest";
+import { prisma } from "@lib/prisma";
 
 function BFS(root: GraphNode) {
 	const visited = new Set<GraphNode>();
@@ -102,13 +102,13 @@ export default async function handler(
 				email: true,
 				posts: {
 					select: {
-						PostID: true,
-						UserID: true,
-						DatePosted: true,
-						PostText: true,
-						Image: true,
-						ImageRef: true,
-						User: {
+						id: true,
+						userID: true,
+						datePosted: true,
+						postText: true,
+						image: true,
+						imageRef: true,
+						user: {
 							select: {
 								password: false,
 								name: true,
@@ -116,8 +116,8 @@ export default async function handler(
 								preferences: true,
 							},
 						},
-						PostLikes: true,
-						Comments: true,
+						postLikes: true,
+						comments: true,
 					},
 				},
 				following: {
@@ -129,7 +129,7 @@ export default async function handler(
 				},
 				postLikes: {
 					select: {
-						User: {
+						user: {
 							select: {
 								password: false,
 								id: true,
@@ -157,10 +157,7 @@ export default async function handler(
 					}) =>
 						new Edge("following").link(
 							userNode,
-							getUserNodeByID(
-								userNodes,
-								following.id
-							) as GraphNode
+							getUserNodeByID(userNodes, following.id)
 						)
 				)
 		);
@@ -178,21 +175,19 @@ export default async function handler(
 
 		// do a breadth first search starting from the user with the right email
 		const recommendedUsers = BFS(
-			userNodes.find(
-				(userNode) => userNode.get("email") === email
-			) as GraphNode
+			userNodes.find((userNode) => userNode.get("email") === email)
 		);
 		const recommendedUsersArray = Array.from(recommendedUsers).map((node) =>
 			JSON.parse(node.toString())
 		);
 		const recommendedPosts = recommendedUsersArray
 			.flatMap(
-				({ properties }: { properties: { posts: Posts[] } }) =>
+				({ properties }: { properties: { posts: Post[] } }) =>
 					properties.posts
 			)
 			.sort((a, b) => {
-				if (a.DatePosted > b.DatePosted) return -1;
-				else if (a.DatePosted < b.DatePosted) return 1;
+				if (a.datePosted > b.datePosted) return -1;
+				else if (a.datePosted < b.datePosted) return 1;
 				else return 0;
 			});
 

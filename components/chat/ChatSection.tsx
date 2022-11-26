@@ -7,7 +7,7 @@ import React, {
 	Dispatch,
 } from "react";
 import MessageComponent from "./Message";
-import { ChatState, Message, Action } from "../../reducers/chatReducer";
+import { ChatState, Action, Message } from "@reducers/chatReducer";
 import { CHAT_ACTION } from "../../actions/types/chat";
 import { useRouter } from "next/router";
 
@@ -25,9 +25,7 @@ const ChatSection: FC<ChatSectionProps> = ({ chatState, dispatch }) => {
 	// Check to see if you are part of the chat
 	// if not, redirect to 404 page
 	if (
-		!chatState.chats?.find(
-			(chat) => chat.ChatID === chatState.selectedChatID
-		)
+		!chatState.chats?.find((chat) => chat.id === chatState.selectedChatID)
 	) {
 		router.push("/404");
 	}
@@ -46,7 +44,6 @@ const ChatSection: FC<ChatSectionProps> = ({ chatState, dispatch }) => {
 					throw new Error(JSON.stringify(data, null, 4));
 
 				// if successful, set the messages to that
-				console.log("MESSAGES", JSON.stringify(data, null, 4));
 				dispatch({
 					type: CHAT_ACTION.SET_MESSAGES,
 					payload: { messages: data },
@@ -62,10 +59,13 @@ const ChatSection: FC<ChatSectionProps> = ({ chatState, dispatch }) => {
 	// RUNS EVERYTIME THE CHAT IS CHANGED
 	useEffect(() => {
 		// handling receiving messages from the server
-		chatState.socket?.on("server new message", (message: any) => {
+		chatState.socket?.on("server new message", (message: Message) => {
 			// if the message belongs to that chat that you're in then it will be displayed
-			if (message.ChatID === chatState.selectedChatID) {
-				console.log("the server says back:", message);
+			if (message.chatID === chatState.selectedChatID) {
+				console.log(
+					"the server says back:".toUpperCase(),
+					JSON.stringify(message, null, 4)
+				);
 				dispatch({
 					type: CHAT_ACTION.NEW_MESSAGE,
 					payload: { newMessage: message },
@@ -74,29 +74,23 @@ const ChatSection: FC<ChatSectionProps> = ({ chatState, dispatch }) => {
 
 			// scroll to the bottom if you sent the message
 			setTimeout(() => {
-				if (message.Sender.name === chatState.yourUsername) {
+				if (message.sender.name === chatState.yourUsername) {
 					scrollDummy.current?.scrollIntoView({ behavior: "smooth" });
 				}
 			}, 100);
 		});
 
 		// handling deleted messages
-		chatState.socket?.on(
-			"server deleted message",
-			({ messageID, chatID }) => {
-				// only handle message if it is in the chat that you are in
-				if (chatID === chatState.selectedChatID) {
-					console.log(
-						"deleted message in this chat with id",
-						messageID
-					);
-					dispatch({
-						type: CHAT_ACTION.DELETE_MESSAGE,
-						payload: { messageID },
-					});
-				}
+		chatState.socket?.on("server deleted message", ({ id, chatID }) => {
+			// only handle message if it is in the chat that you are in
+			if (chatID === chatState.selectedChatID) {
+				console.log("deleted message in this chat with id", id);
+				dispatch({
+					type: CHAT_ACTION.DELETE_MESSAGE,
+					payload: { messageID: id },
+				});
 			}
-		);
+		});
 
 		// unsubscribe from socket events when component is removed
 		return () => {
@@ -121,7 +115,7 @@ const ChatSection: FC<ChatSectionProps> = ({ chatState, dispatch }) => {
 
 	return (
 		<>
-			<div className="w-full h-full max-h-[48rem] flex flex-col relative">
+			<div className="w-full h-full max-h-[79vh] flex flex-col relative">
 				<div className="h-full flex flex-col justify-start px-3 py-3 overflow-y-scroll">
 					{/* push all the messages to the bottom */}
 					<div className="mt-auto"></div>
@@ -129,42 +123,41 @@ const ChatSection: FC<ChatSectionProps> = ({ chatState, dispatch }) => {
 					{/* ALL THE MESSAGES */}
 					<div className="flex flex-col gap-2">
 						{chatState.messages.map((message, index) => {
-							console.log(message.DatePosted);
 							return (
 								<>
 									{/* check if the dates are different, and separate them messages if they are */}
-									{new Date(message.DatePosted).getDate() !==
+									{new Date(message.datePosted).getDate() !==
 										new Date(
 											chatState.messages[
 												index - 1
-											]?.DatePosted
+											]?.datePosted
 										)?.getDate() && (
 										<div className="w-full py-4 text-indigo-800 flex justify-center items-center">
 											<p className="text-xs">
 												{new Date(
-													message.DatePosted
+													message.datePosted
 												).toLocaleDateString()}
 											</p>
 										</div>
 									)}
 
 									<MessageComponent
-										key={message.MessageID}
-										id={message.MessageID}
-										message={message.Text}
+										key={message.id}
+										id={message.id}
+										message={message.text}
 										receiver={
 											chatState.yourUsername ===
-											message.Sender.name
+											message.sender.name
 										}
 										// check to see if the author of the message is the same as the previous message
 										continuing={
-											message.Sender.name ===
+											message.sender?.name ===
 											chatState.messages[index - 1]
-												?.Sender.name
+												?.sender.name
 										}
 										chatState={chatState}
-										pfp={message.Sender.image as string}
-										datePosted={message.DatePosted}
+										pfp={message.sender.image as string}
+										datePosted={message.datePosted}
 									/>
 								</>
 							);
@@ -173,9 +166,8 @@ const ChatSection: FC<ChatSectionProps> = ({ chatState, dispatch }) => {
 					{/* dummy to scroll to the bottom when you post a new message */}
 					<div ref={scrollDummy}></div>
 				</div>
-
-				{/* input box to enter messages */}
 			</div>
+			{/* input box to enter messages */}
 			<form
 				onSubmit={sendMessage}
 				className="w-full h-full rounded-br-lg bg-indigo-400 px-3 py-2"

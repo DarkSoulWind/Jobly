@@ -1,8 +1,10 @@
-import React, { FC, useState } from "react";
+import React, { FC, Fragment, useState } from "react";
 import { useRouter } from "next/router";
 import Link from "next/link";
 import { signOut, useSession } from "next-auth/react";
 import { FaComment, FaSearch, FaSuitcase, FaUsers } from "react-icons/fa";
+import { Menu, Transition } from "@headlessui/react";
+import { HiAcademicCap, HiBriefcase, HiLogout } from "react-icons/hi";
 
 interface NavbarProps {
 	searchitem?: string;
@@ -83,86 +85,95 @@ const Navbar: FC<NavbarProps> = (props) => {
 						<FaUsers />
 					</button>
 
-					<button
-						className={`transition-all group relative h-10 w-10 ${
-							router.route.startsWith(
-								`/user/${data?.user?.name
-									?.split(" ")
-									.join("%20")}`
-							)
-								? "bg-slate-300/70 "
-								: ""
-						}`}
-					>
-						<img
-							onError={(e) => {
-								e.preventDefault();
-								console.log("ERROR LOADING IMAGE");
-								e.currentTarget.onerror = null;
-								e.currentTarget.classList.add("animate-pulse");
-								e.currentTarget.src =
-									"https://i.pinimg.com/736x/dd/f0/11/ddf0110aa19f445687b737679eec9cb2.jpg";
-							}}
-							src={data?.user?.image ?? ""}
-							className="rounded-full"
-							alt="User PFP"
-						/>
+					{/* This is a dropdown menu that appears when the user clicks on their profile picture. */}
+					<Menu>
+						<Menu.Button className="rounded-full overflow-clip aspect-square h-10 w-10">
+							<img
+								src={data?.user?.image ?? ""}
+								alt={data?.user?.name ?? ""}
+								className="rounded-full"
+								onError={(e) => {
+									e.preventDefault();
+									console.log("ERROR LOADING IMAGE");
+									e.currentTarget.onerror = null;
+									e.currentTarget.classList.add(
+										"animate-pulse"
+									);
+									e.currentTarget.src =
+										"https://i.pinimg.com/736x/dd/f0/11/ddf0110aa19f445687b737679eec9cb2.jpg";
+								}}
+							/>
+						</Menu.Button>
 
-						{/* DROPDOWN WHEN CLICKING ON USER */}
-						<div className="group-focus-within:block hidden shadow-md shadow-gray-500 absolute right-0 -bottom-40 z-10 min-w-[10rem] max-w-[30rem] bg-slate-100 text-black rounded-lg">
-							<div className="flex p-2 justify-start items-center text-left gap-2">
-								{/* USER PFP */}
-								<img
-									src={data.user?.image ?? ""}
-									className="rounded-full aspect-square w-14 h-14"
-									alt="PFP"
-									onError={(e) => {
-										e.preventDefault();
-										console.log("ERROR LOADING IMAGE");
-										e.currentTarget.onerror = null;
-										e.currentTarget.classList.add(
-											"animate-pulse"
-										);
-										e.currentTarget.src =
-											"https://i.pinimg.com/736x/dd/f0/11/ddf0110aa19f445687b737679eec9cb2.jpg";
-									}}
-								/>
-								<div className="overflow-ellipsis overflow-hidden whitespace-nowrap">
-									<h3>{data.user?.name}</h3>
-									<p>--</p>
+						<Transition
+							as={Fragment}
+							enter="transition ease-out duration-100"
+							enterFrom="transform opacity-0 scale-95"
+							enterTo="transform opacity-100 scale-100"
+							leave="transition ease-in duration-75"
+							leaveFrom="transform opacity-100 scale-100"
+							leaveTo="transform opacity-0 scale-95"
+						>
+							<Menu.Items className="absolute top-10 mt-1 w-56 origin-top-right divide-y divide-gray-100 rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+								<div className="p-1">
+									<Menu.Item>
+										{({ active }) => (
+											<a
+												className={`${
+													active
+														? "bg-violet-500 text-white"
+														: "text-gray-900"
+												} group flex gap-2 w-full items-center transition-all duration-300 rounded-md px-2 py-2 text-sm`}
+												href={`/user/${data?.user?.name}`}
+											>
+												<HiAcademicCap className="w-5 h-5" />
+												<p className="font-bold">
+													{data.user?.name}
+												</p>
+											</a>
+										)}
+									</Menu.Item>
+
+									<Menu.Item>
+										{({ active }) => (
+											<a
+												className={`${
+													active
+														? "bg-violet-500 text-white"
+														: "text-gray-900"
+												} group flex gap-2 w-full items-center transition-all duration-300 rounded-md px-2 py-2 text-sm`}
+												href="/jobs/saved"
+											>
+												<HiBriefcase className="w-5 h-5" />
+												<p>Saved jobs</p>
+											</a>
+										)}
+									</Menu.Item>
+
+									<Menu.Item>
+										{({ active }) => (
+											<button
+												className={`${
+													active
+														? "bg-violet-500 text-white"
+														: "text-gray-900"
+												} group flex gap-2 w-full items-center transition-all duration-300 rounded-md px-2 py-2 text-sm`}
+												onClick={() => {
+													signOut({
+														callbackUrl:
+															"http://localhost:3000/auth/signin",
+													});
+												}}
+											>
+												<HiLogout className="w-5 h-5" />
+												<p>Sign out</p>
+											</button>
+										)}
+									</Menu.Item>
 								</div>
-							</div>
-							<div className="px-2">
-								<p
-									onClick={() =>
-										router.push(`/user/${data.user?.name}`)
-									}
-									className="w-full mt-2 text-sm text-semibold text-blue-500 border-2 hover:bg-blue-100 transition-all border-blue-500 rounded-full"
-								>
-									View profile
-								</p>
-							</div>
-							<div className="border-t-[1px] mt-3 p-2 border-slate-300 flex flex-col gap-1 items-start justify-start">
-								<Link href={"/jobs/saved"}>
-									<a className="text-sm text-left font-normal hover:underline text-slate-700">
-										Saved jobs
-									</a>
-								</Link>
-
-								<p
-									onClick={() => {
-										signOut({
-											callbackUrl:
-												"http://localhost:3000/auth/signin",
-										});
-									}}
-									className="text-sm text-left font-normal hover:underline text-slate-700"
-								>
-									Sign out
-								</p>
-							</div>
-						</div>
-					</button>
+							</Menu.Items>
+						</Transition>
+					</Menu>
 				</div>
 			)}
 

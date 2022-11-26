@@ -1,6 +1,8 @@
-import React, { FC } from "react";
+import React, { FC, Fragment } from "react";
 import { FaEllipsisH } from "react-icons/fa";
-import { ChatState } from "../../reducers/chatReducer";
+import { ChatState } from "@reducers/chatReducer";
+import { Menu, Transition } from "@headlessui/react";
+import { HiFlag, HiTrash } from "react-icons/hi";
 
 interface MessageProps {
 	// IF YOU ARE THE ONE RECEIVING THE MESSAGE
@@ -17,9 +19,9 @@ interface MessageProps {
 
 const Message: FC<MessageProps> = (props) => {
 	const unsend = async () => {
-		console.log("lol");
+		console.log("deleted message: ", props.message);
 		props.chatState.socket?.emit("deleted message", {
-			messageID: props.id,
+			id: props.id,
 			chatID: props.chatState.selectedChatID,
 		});
 	};
@@ -61,7 +63,7 @@ const Message: FC<MessageProps> = (props) => {
 					<p>{props.message}</p>
 				</div>
 
-				<div className="group-hover:block hidden">
+				<div className="group-hover:block hidden relative">
 					<MessageOptions
 						unsend={unsend}
 						receiver={props.receiver}
@@ -81,31 +83,103 @@ interface MessageOptionsProps extends React.HTMLAttributes<HTMLDivElement> {
 
 const MessageOptions: FC<MessageOptionsProps> = (props) => {
 	return (
-		<button className="group relative ">
-			<FaEllipsisH className="cursor-pointer fill-slate-500 hover:fill-black" />
-			<div
-				className={`absolute -top-10 ${
-					props.receiver ? "right-0" : "left-0"
-				} group-focus-within:block hidden shadow-xl rounded-xl overflow-clip shadow-black"`}
+		<Menu>
+			<Menu.Button className="relative group p-2 rounded-full aspect-square hover:bg-slate-100 transition-all">
+				<FaEllipsisH />
+			</Menu.Button>
+
+			<Transition
+				as={Fragment}
+				enter="transition ease-out duration-100"
+				enterFrom="transform opacity-0 scale-95"
+				enterTo="transform opacity-100 scale-100"
+				leave="transition ease-in duration-75"
+				leaveFrom="transform opacity-100 scale-100"
+				leaveTo="transform opacity-0 scale-95"
 			>
-				<div className="flex justify-center items-center text-white font-bold gap-2 bg-indigo-800 py-2 px-4 text-sm">
-					{/* DELETE MESSAGE */}
-					{props.receiver && <p onClick={props.unsend}>Unsend</p>}
+				<Menu.Items
+					className={`absolute mt-1 w-56 divide-y divide-gray-100 rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none top-0 ${
+						props.receiver ? "right-7" : "left-7"
+					}`}
+				>
+					<div className="p-1">
+						{props.receiver && (
+							<Menu.Item>
+								{({ active }) => (
+									<button
+										onClick={props.unsend}
+										className={`${
+											active
+												? "bg-violet-500 text-white"
+												: "text-gray-900"
+										} group flex gap-2 w-full items-center transition-all duration-300 rounded-md px-2 py-2 text-sm`}
+									>
+										<HiTrash
+											className={`w-5 h-5 ${
+												active
+													? "fill-white"
+													: "fill-red-500"
+											}`}
+										/>
+										<p
+											className={`font-bold ${
+												active
+													? "text-white"
+													: "text-red-500 "
+											}`}
+										>
+											Delete
+										</p>
+									</button>
+								)}
+							</Menu.Item>
+						)}
 
-					{/* COPY MESSAGE */}
-					<p
-						onClick={() =>
-							navigator.clipboard.writeText(props.message ?? "")
-						}
-					>
-						Copy
-					</p>
+						{!props.receiver && (
+							<Menu.Item>
+								{({ active }) => (
+									<button
+										className={`${
+											active
+												? "bg-violet-500 text-white"
+												: "text-gray-900"
+										} group flex gap-2 w-full items-center transition-all duration-300 rounded-md px-2 py-2 text-sm`}
+									>
+										<HiFlag className="w-5 h-5" />
+										<p className={`font-bold`}>Report</p>
+									</button>
+								)}
+							</Menu.Item>
+						)}
+					</div>
+				</Menu.Items>
+			</Transition>
+		</Menu>
 
-					{/* REPORT MESSAGE (doesnt do anything yet) */}
-					{!props.receiver && <p>Report</p>}
-				</div>
-			</div>
-		</button>
+		// <button className="group relative ">
+		// 	<div
+		// 		className={`absolute -top-10 ${
+		// 			props.receiver ? "right-0" : "left-0"
+		// 		} group-focus-within:block hidden shadow-xl rounded-xl overflow-clip shadow-black"`}
+		// 	>
+		// 		<div className="flex justify-center items-center text-white font-bold gap-2 bg-indigo-800 py-2 px-4 text-sm">
+		// {/* DELETE MESSAGE */}
+		// {props.receiver && <p onClick={props.unsend}>Unsend</p>}
+
+		// {/* COPY MESSAGE */}
+		// 			<p
+		// 				onClick={() =>
+		// 					navigator.clipboard.writeText(props.message ?? "")
+		// 				}
+		// 			>
+		// 				Copy
+		// 			</p>
+
+		// 			{/* REPORT MESSAGE (doesnt do anything yet) */}
+		// 			{!props.receiver && <p>Report</p>}
+		// 		</div>
+		// 	</div>
+		// </button>
 	);
 };
 

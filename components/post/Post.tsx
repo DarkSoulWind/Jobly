@@ -1,47 +1,44 @@
-import React, { FC, RefObject, useEffect, useState, Dispatch } from "react";
-import {
-	FaComment,
-	FaEllipsisH,
-	FaShare,
-	FaThumbsUp,
-	FaFlag,
-	FaTrash,
-} from "react-icons/fa";
-import {
-	Posts,
-	User,
-	PostLikes,
-	UserPreferences,
-	Comments,
-} from "@prisma/client";
-import Modal from "../modal/Modal";
-import { useModal } from "../../hooks/useModal";
+import React, {
+	FC,
+	RefObject,
+	useEffect,
+	useState,
+	Dispatch,
+	Fragment,
+} from "react";
+import { FaComment, FaEllipsisH, FaShare, FaThumbsUp } from "react-icons/fa";
+import { Post, User, PostLike, UserPreference, Comment } from "@prisma/client";
+import Modal from "@components/modal/Modal";
+import { useModal } from "@hooks/useModal";
 import { useRouter } from "next/router";
-import { useDate } from "../../hooks/useDate";
+import { useDate } from "@hooks/useDate";
 import { deleteObject, ref } from "firebase/storage";
 import { storage } from "../../firebase-config";
-import { Action as FeedAction, FEED_ACTION } from "../../reducers/feedReducer";
+import { Action as FeedAction, FEED_ACTION } from "@reducers/feedReducer";
 import { AnimatePresence } from "framer-motion";
+import { Menu, Transition } from "@headlessui/react";
+import { HiFlag, HiTrash } from "react-icons/hi";
 
 type PostWithLikesAndUser =
-	| Posts & {
-			User: User & {
-				preferences: UserPreferences | null;
+	| Post & {
+			user: User & {
+				preferences: UserPreference | null;
 			};
-			PostLikes: PostLikes[];
-			Comments: Comments[];
+			comments: Comment[];
+			postLikes: PostLike[];
 	  };
 
-type UserWithPreferences = User & { preferences: UserPreferences | null };
+type UserWithPreferences = User & { preferences: UserPreference | null };
 
-type PostProps = {
+interface PostProps {
 	postData: PostWithLikesAndUser;
 	yourData?: UserWithPreferences;
-	pageExpanded: boolean;
 	commentInputRef?: RefObject<HTMLInputElement>;
 	// feed dispatch action
 	dispatch?: Dispatch<FeedAction>;
-};
+	// if the post is being displayed on its own page and not the feed
+	pageExpanded: boolean;
+}
 
 const Post: FC<PostProps> = ({
 	postData,
@@ -53,12 +50,12 @@ const Post: FC<PostProps> = ({
 	const router = useRouter();
 	// IS THIS POST LIKED BY YOU
 	const [postLiked, setPostLiked] = useState<boolean>(
-		postData?.PostLikes?.filter((like) => like.UserID === yourData?.id)
+		postData?.postLikes?.filter((like) => like.userID === yourData?.id)
 			.length > 0 || false
 	);
 
 	// WHEN THE POST WAS POSTED RELATIVE TO TODAY
-	const relativeDatePosted = useDate(new Date(postData.DatePosted));
+	const relativeDatePosted = useDate(new Date(postData.datePosted));
 
 	const [likedButtonLoading, setLikeButtonLoading] = useState(false);
 
@@ -69,15 +66,19 @@ const Post: FC<PostProps> = ({
 	// CHECK IF THIS POST IS LIKED BY YOU OR NOT
 	useEffect(() => {
 		setPostLiked(
-			postData?.PostLikes?.filter((like) => like.UserID === yourData?.id)
+			postData?.postLikes?.filter((like) => like.userID === yourData?.id)
 				.length > 0
 		);
 		console.log("post liked:", postLiked);
 	}, [yourData]);
 
 	const likePost = async () => {
-		const UserID = yourData?.id;
-		const PostID = postData?.PostID;
+		console.log(
+			"your data before delete",
+			JSON.stringify(yourData, null, 4)
+		);
+		const userID = yourData?.id;
+		const postID = postData?.id;
 		setLikeButtonLoading(true);
 
 		// LIKE POST IF POST HASNT BEEN LIKED
@@ -87,10 +88,10 @@ const Post: FC<PostProps> = ({
 					"http://localhost:3000/api/post-likes/add",
 					{
 						method: "POST",
-						body: JSON.stringify({ UserID, PostID }),
+						body: JSON.stringify({ userID, postID }),
 					}
 				);
-				const data: PostLikes = await response.json();
+				const data: PostLike = await response.json();
 
 				if (!response.ok) {
 					throw new Error(JSON.stringify(data, null, 4));
@@ -98,7 +99,7 @@ const Post: FC<PostProps> = ({
 
 				//  Add the like to the array and set post liked to true
 				console.log("Added a like!");
-				postData?.PostLikes.push({ ...data });
+				postData?.postLikes.push({ ...data });
 				setPostLiked(true);
 			} catch (error) {
 				console.error(error);
@@ -108,9 +109,9 @@ const Post: FC<PostProps> = ({
 			try {
 				const response = await fetch(
 					"http://localhost:3000/api/post-likes/delete",
-					{ method: "POST", body: JSON.stringify({ UserID, PostID }) }
+					{ method: "POST", body: JSON.stringify({ userID, postID }) }
 				);
-				const data: PostLikes = await response.json();
+				const data: PostLike = await response.json();
 
 				if (!response.ok) {
 					throw new Error(JSON.stringify(data, null, 4));
@@ -118,9 +119,11 @@ const Post: FC<PostProps> = ({
 
 				// Remove the like from the array and set post liked to false
 				console.log("Deleted a like!");
-				postData.PostLikes = postData.PostLikes.filter((post) => {
-					post.LikeID !== data.LikeID;
-				});
+				postData.postLikes = postData.postLikes.filter(
+					(post: PostLike) => {
+						post.userID !== data.userID;
+					}
+				);
 				setPostLiked(false);
 			} catch (error) {
 				console.error(error);
@@ -130,7 +133,7 @@ const Post: FC<PostProps> = ({
 	};
 
 	const deletePost = async () => {
-		const postID = postData?.PostID;
+		const postID = postData?.id;
 		try {
 			console.log("Deleting post...");
 			const response = await fetch(
@@ -145,8 +148,8 @@ const Post: FC<PostProps> = ({
 				throw new Error(data);
 			}
 
-			if (postData.Image != null) {
-				const imageRef = ref(storage, postData.ImageRef as string);
+			if (postData.image != null) {
+				const imageRef = ref(storage, postData.imageRef as string);
 				await deleteObject(imageRef);
 				console.log("Deleted image from firebase storage");
 			}
@@ -161,7 +164,7 @@ const Post: FC<PostProps> = ({
 			if (!pageExpanded && dispatch) {
 				dispatch({
 					type: FEED_ACTION.REMOVE_POST,
-					payload: { postID: postData.PostID },
+					payload: { postID: postData.id },
 				});
 				dispatch({
 					type: FEED_ACTION.SET_SUCCESS_MESSAGE,
@@ -176,60 +179,89 @@ const Post: FC<PostProps> = ({
 	return (
 		<div className="w-full bg-white shadow-sm shadow-slate-300 rounded-lg overflow-clip border-[1px] border-slate-300">
 			<div className="px-4 py-1">
-				<div className="flex justify-end items-center mb-1">
-					{/* OPTIONS BUTTON */}
-					<button className="relative group p-2 rounded-full aspect-square hover:bg-slate-100 transition-all">
-						<FaEllipsisH />
+				<div className="relative flex justify-end items-center mb-1">
+					<Menu>
+						<Menu.Button className="relative group p-2 rounded-full aspect-square hover:bg-slate-100 transition-all">
+							<FaEllipsisH />
+						</Menu.Button>
 
-						{/* OPTIONS DROPDOWN MENU */}
-						<div className="absolute w-[20rem] top-8 overflow-clip right-0 hidden shadow-sm shadow-slate-500 group-focus-within:block bg-slate-100 border-[1px] border-slate-200 rounded-lg">
-							<div className="flex gap-2 flex-col justify-start items-start w-full">
-								{/* REPORT POSTS BUTTON */}
-								{postData?.User?.name !== yourData?.name && (
-									<button className="w-full gap-4 flex items-center justify-start px-4 py-1 hover:bg-slate-200">
-										<FaFlag className="aspect-square w-6 h-6" />
-										<div className="w-full text-left text-sm">
-											<h5 className="font-bold">
-												Report
-											</h5>
-											<p>
-												This post is offensive or the
-												account is hacked
-											</p>
-										</div>
-									</button>
-								)}
+						<Transition
+							as={Fragment}
+							enter="transition ease-out duration-100"
+							enterFrom="transform opacity-0 scale-95"
+							enterTo="transform opacity-100 scale-100"
+							leave="transition ease-in duration-75"
+							leaveFrom="transform opacity-100 scale-100"
+							leaveTo="transform opacity-0 scale-95"
+						>
+							<Menu.Items className="absolute top-5 mt-1 w-56 divide-y divide-gray-100 rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+								<div className="p-1">
+									{postData.user.name === yourData?.name && (
+										<Menu.Item>
+											{({ active }) => (
+												<button
+													onClick={
+														toggleConfirmDelete
+													}
+													className={`${
+														active
+															? "bg-violet-500 text-white"
+															: "text-gray-900"
+													} group flex gap-2 w-full items-center transition-all duration-300 rounded-md px-2 py-2 text-sm`}
+												>
+													<HiTrash
+														className={`w-5 h-5 ${
+															active
+																? "fill-white"
+																: "fill-red-500"
+														}`}
+													/>
+													<p
+														className={`font-bold ${
+															active
+																? "text-white"
+																: "text-red-500 "
+														}`}
+													>
+														Delete
+													</p>
+												</button>
+											)}
+										</Menu.Item>
+									)}
 
-								{/* DELETE POST BUTTON */}
-								{postData?.User?.name === yourData?.name && (
-									<button
-										onClick={toggleConfirmDelete}
-										className="w-full gap-4 flex items-center justify-start px-4 py-1 hover:bg-slate-200"
-									>
-										<FaTrash className="aspect-square w-6 h-6" />
-										<div className="w-full text-left text-sm">
-											<h5 className="font-bold">
-												Delete post
-											</h5>
-											<p>
-												Remove the post from your
-												timeline
-											</p>
-										</div>
-									</button>
-								)}
-							</div>
-						</div>
-					</button>
+									{postData?.user?.name !==
+										yourData?.name && (
+										<Menu.Item>
+											{({ active }) => (
+												<button
+													className={`${
+														active
+															? "bg-violet-500 text-white"
+															: "text-gray-900"
+													} group flex gap-2 w-full items-center transition-all duration-300 rounded-md px-2 py-2 text-sm`}
+												>
+													<HiFlag className="w-5 h-5" />
+													<p className={`font-bold`}>
+														Report
+													</p>
+												</button>
+											)}
+										</Menu.Item>
+									)}
+								</div>
+							</Menu.Items>
+						</Transition>
+					</Menu>
 				</div>
 				<hr />
 				<div className="flex mt-3 justify-start items-center w-full gap-2">
 					<div className="aspect-square rounded-full p-[0.15rem] bg-gradient-to-br from-blue-500 to-violet-500">
 						{/* USER PFP */}
 						<img
-							src={postData?.User?.image ?? ""}
+							src={postData?.user?.image ?? ""}
 							className="aspect-square border-2 bg-white border-white w-14 rounded-full"
-							alt={`${postData?.User?.name} PFP`}
+							alt={`${postData?.user?.name} PFP`}
 							onError={(e) => {
 								e.preventDefault();
 								console.log("ERROR LOADING IMAGE");
@@ -246,15 +278,15 @@ const Post: FC<PostProps> = ({
 						<h4
 							className="font-bold cursor-pointer hover:underline"
 							onClick={() =>
-								router.push(`/user/${postData?.User?.name}`)
+								router.push(`/user/${postData?.user?.name}`)
 							}
 						>
-							{postData?.User?.name}
+							{postData?.user?.name}
 						</h4>
 						<p>{relativeDatePosted}</p>
 					</div>
 
-					{yourData?.name != postData?.User?.name && pageExpanded && (
+					{yourData?.name != postData?.user?.name && pageExpanded && (
 						<div className="px-3 py-1 cursor-pointer hover:bg-blue-100 rounded-lg transition-all">
 							<button className="text-blue-500 font-semibold">
 								+&nbsp;Follow
@@ -263,12 +295,12 @@ const Post: FC<PostProps> = ({
 					)}
 				</div>
 
-				<p className="mt-2">{postData?.PostText}</p>
+				<p className="mt-2">{postData?.postText}</p>
 			</div>
 
 			{/* POST IMAGE */}
 			<img
-				src={postData?.Image ?? ""}
+				src={postData?.image ?? ""}
 				loading="lazy"
 				className="w-full"
 				alt=""
@@ -279,16 +311,16 @@ const Post: FC<PostProps> = ({
 				<div className="flex justify-between items-center text-xs py-1">
 					<button className="hover:text-blue-500 hover:underline">
 						<p>
-							{postData?.PostLikes?.length ?? "0"}{" "}
-							{postData.PostLikes?.length === 1
+							{postData?.postLikes?.length ?? "0"}{" "}
+							{postData.postLikes?.length === 1
 								? "like"
 								: "likes"}
 						</p>
 					</button>
 					<button className="hover:text-blue-500 hover:underline">
 						<p>
-							{postData.Comments?.length ?? "0"}{" "}
-							{postData.Comments?.length === 1
+							{postData.comments?.length ?? "0"}{" "}
+							{postData.comments?.length === 1
 								? "comment"
 								: "comments"}
 						</p>
@@ -322,7 +354,7 @@ const Post: FC<PostProps> = ({
 				<button
 					onClick={() => {
 						if (!pageExpanded) {
-							router.push(`/post/${postData?.PostID}`);
+							router.push(`/post/${postData?.id}`);
 						} else {
 							console.log("lol");
 							commentInputRef?.current?.focus();
@@ -357,7 +389,7 @@ const Post: FC<PostProps> = ({
 						discardButtonColour="bg-blue-500 hover:bg-blue-700"
 					>
 						<p className="font-bold">
-							This will permanently delete your post forever.
+							This will permanently delete your post.
 						</p>
 					</Modal>
 				)}

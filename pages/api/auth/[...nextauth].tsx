@@ -2,7 +2,9 @@ import NextAuth from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { PrismaAdapter } from "@next-auth/prisma-adapter";
-import { prisma } from "../../../lib/prisma";
+import { Session } from "next-auth";
+import { prisma } from "@lib/prisma";
+import { JWT } from "next-auth/jwt";
 
 export default NextAuth({
 	adapter: PrismaAdapter(prisma),
@@ -48,7 +50,7 @@ export default NextAuth({
 
 			return token;
 		},
-		session: ({ session, token }) => {
+		session: ({ session, token }: { session: Session; token: JWT }) => {
 			if (token) {
 				session.id = token.id;
 			}

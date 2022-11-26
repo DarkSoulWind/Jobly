@@ -1,19 +1,21 @@
 import {
-	Comments,
-	Follows,
-	Interests,
-	Posts,
+	Comment,
+	Follow,
+	Interest,
+	Post,
 	User,
-	UserPreferences,
+	UserPreference,
 } from "@prisma/client";
+import { InferGetStaticPropsType } from "next";
+import { getStaticProps } from "pages/user/[username]";
 
 export interface UserProfile {
-	Comments: (Comments & {
-		Post: Posts;
+	Comments: (Comment & {
+		Post: Post;
 	})[];
 	name: string;
-	preferences: UserPreferences | null;
-	interests: Interests[];
+	preferences: UserPreference | null;
+	interests: Interest[];
 	image: string | null;
 	email: string | null;
 	phoneNumber: string | null;
@@ -21,16 +23,15 @@ export interface UserProfile {
 		follower: User;
 		followerId: string;
 	}[];
-	following: Follows[];
+	following: Follow[];
 	id: string;
-	posts: Posts[];
+	posts: Post[];
 }
 
-export interface ProfileState {
-	profile: UserProfile;
+export type ProfileState = InferGetStaticPropsType<typeof getStaticProps> & {
 	isFollowing: boolean;
 	successMessage: string;
-}
+};
 
 export enum PROFILE_ACTION {
 	SET_IS_FOLLOWING,
@@ -50,17 +51,8 @@ export interface Action {
 				followerId: string;
 			};
 		};
-		profileUpdate?: {
-			FirstName?: string;
-			LastName?: string;
-			Pronouns?: string;
-			Bio?: string;
-			CountryRegion?: string;
-			PostalCode?: string;
-			City?: string;
-			School?: string;
-			phoneNumber?: string;
-			PhoneType?: string;
+		profileUpdate?: Omit<UserPreference, "id" | "userID" | "banner"> & {
+			phoneNumber: string;
 		};
 	};
 }
@@ -76,34 +68,27 @@ export const profileReducer = (
 			return {
 				...state,
 				isFollowing: action.payload.isFollowing ?? state.isFollowing,
-				profile: {
-					...state.profile,
-					followers:
-						action.payload.follow?.action === "add"
-							? [
-									...state.profile.followers,
-									action.payload.follow.data,
-							  ]
-							: [...state.profile.followers].filter(
-									(follow) =>
-										follow.followerId !==
-										action.payload.follow?.data.followerId
-							  ),
-				},
+
+				followers:
+					action.payload.follow?.action === "add"
+						? [...state.followers!, action.payload.follow.data]
+						: [...state.followers!].filter(
+								(follow) =>
+									follow.followerId !==
+									action.payload.follow?.data.followerId
+						  ),
 			};
 		case PROFILE_ACTION.SET_PROFILE_INFO:
 			// const {FirstName, LastName, Pronouns, Bio, CountryRegion, PostalCode, City, School, PhoneType} = action.payload.profileUpdate as {[key:string]: string};
 			return {
 				...state,
-				profile: {
-					...state.profile,
-					phoneNumber:
-						action.payload.profileUpdate?.phoneNumber ??
-						state.profile.phoneNumber,
-					preferences: {
-						...(state.profile.preferences as UserPreferences),
-						...action.payload.profileUpdate,
-					},
+
+				phoneNumber:
+					action.payload.profileUpdate?.phoneNumber ??
+					state.phoneNumber,
+				preferences: {
+					...state.preferences,
+					...action.payload.profileUpdate,
 				},
 			};
 		case PROFILE_ACTION.SET_SUCCESS_MESSAGE:

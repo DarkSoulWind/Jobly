@@ -86,8 +86,8 @@ model UserPreference {
 model Post {
   id         String     @id @default(uuid())
   userID     String
-  datePosted DateTime
-  postText   String     @db.Text
+  datePosted DateTime   @default(now())
+  postText   String     @db.VarChar(280)
   image      String?
   imageRef   String?
   user       User       @relation("posts", fields: [userID], references: [id], onDelete: Cascade)
@@ -105,14 +105,14 @@ model PostLike {
 }
 
 model Interest {
-  name   String @id @unique
+  name      String         @id @unique
   interests UserInterest[]
 }
 
 model UserInterest {
-  userID String
-  user User @relation(fields: [userID], references: [id], onDelete: Cascade)
-  name String
+  userID   String
+  user     User     @relation(fields: [userID], references: [id], onDelete: Cascade)
+  name     String
   interest Interest @relation(fields: [name], references: [name], onDelete: Cascade)
 
   @@id([userID, name])
@@ -144,7 +144,7 @@ model Comment {
 model Chat {
   id           String        @id @default(uuid())
   name         String
-  messages     Message[] @relation("chat")
+  messages     Message[]     @relation("chat")
   participants Participant[]
 }
 
@@ -160,17 +160,25 @@ model Participant {
 }
 
 model Message {
-  id         String   @id @default(uuid())
+  id         String            @id @default(uuid())
   senderID   String
   chatID     String
-  text       String
-  datePosted DateTime @default(now())
-  received   Boolean  @default(false)
-  chat       Chat     @relation("chat", fields: [chatID], references: [id], onDelete: Cascade)
-  sender     User     @relation("sender", fields: [senderID], references: [id], onDelete: Cascade)
+  text       String            @db.VarChar(280)
+  datePosted DateTime          @default(now())
+  received   Boolean           @default(false)
+  chat       Chat              @relation("chat", fields: [chatID], references: [id], onDelete: Cascade)
+  sender     User              @relation("sender", fields: [senderID], references: [id], onDelete: Cascade)
+  cipher     MessageCipherKey? @relation("message")
 
   @@index([chatID])
   @@index([senderID])
+}
+
+model MessageCipherKey {
+  id        String  @id @default(uuid())
+  messageID String  @unique
+  message   Message @relation("message", fields: [messageID], references: [id], onDelete: Cascade)
+  key       String  @db.VarChar(280)
 }
 
 model SavedJob {

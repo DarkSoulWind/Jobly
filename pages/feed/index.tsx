@@ -291,13 +291,13 @@ const Feed: NextPage = () => {
 						dispatch={dispatch}
 					/>
 				)}
-				{/* </AnimatePresence>
+			</AnimatePresence>
 
 			<AnimatePresence
 				initial={false}
 				mode="wait"
 				onExitComplete={() => null}
-			> */}
+			>
 				{feedState.success !== "" && (
 					<Alert
 						level="Success"

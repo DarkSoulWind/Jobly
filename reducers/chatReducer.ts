@@ -31,6 +31,9 @@ export type Message = {
 	senderID: string;
 	datePosted: Date;
 	received: boolean;
+	cipher: {
+		key: string;
+	} | null;
 };
 
 // THE TYPE FOR THE GLOBAL CHAT STATE

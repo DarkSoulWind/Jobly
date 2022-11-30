@@ -8,18 +8,11 @@ export default async function handler(
 	if (req.method !== "POST") {
 		res.status(500).json({ message: "Please use the POST method." });
 	} else {
-		const {
-			UserID: userID,
-			DatePosted: datePosted,
-			PostText: postText,
-			Image: image,
-			ImageRef: imageRef,
-		} = JSON.parse(req.body);
+		const { userID, postText, image, imageRef } = JSON.parse(req.body);
 		await prisma.post
 			.create({
 				data: {
 					userID,
-					datePosted,
 					postText,
 					image,
 					imageRef,

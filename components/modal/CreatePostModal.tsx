@@ -1,14 +1,14 @@
 import React, { ChangeEvent, Dispatch, FC, useRef, useState } from "react";
 import Modal from "./Modal";
 import { User, Post } from "@prisma/client";
-import { Action as FeedAction, FEED_ACTION } from "../../reducers/feedReducer";
+import { Action as FeedAction, FEED_ACTION } from "@reducers/feedReducer";
 import { FaHashtag, FaImage, FaTimesCircle } from "react-icons/fa";
 import { useRouter } from "next/router";
 import { getDownloadURL, ref, StorageReference } from "firebase/storage";
 import { useUploadFile } from "react-firebase-hooks/storage";
 import { v4 as uuid } from "uuid";
 import { storage } from "../../firebase-config";
-import { useModal } from "../../hooks/useModal";
+import { z } from "zod";
 
 type CreatePostModalProps = {
 	modalOpen: boolean;
@@ -16,6 +16,12 @@ type CreatePostModalProps = {
 	userData?: User;
 	dispatch: Dispatch<FeedAction>;
 };
+
+const SubmitBody = z
+	.string({ required_error: "Post body is empty." })
+	.min(10, { message: "Post body must be longer than 10 characters." })
+	.max(128, { message: "Post body must be 128 characters or fewer." })
+	.trim();
 
 const CreatePostModal: FC<CreatePostModalProps> = ({
 	modalOpen,
@@ -32,9 +38,7 @@ const CreatePostModal: FC<CreatePostModalProps> = ({
 	}>({ src: "" });
 	const uploadImageRef = useRef<HTMLInputElement>(null);
 
-	const [uploadFile, uploading, snapshot, error] = useUploadFile();
-	const [errorAlertOpen, setErrorAlertOpen, toggleErrorAlert] =
-		useModal(true);
+	const [uploadFile, uploading] = useUploadFile();
 
 	// display image that has been submitted from file input
 	const onImageChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -85,16 +89,28 @@ const CreatePostModal: FC<CreatePostModalProps> = ({
 
 	// when posting the post
 	const handleSubmit = async () => {
-		const datePosted = new Date(Date.now());
+		const validResults = SubmitBody.safeParse(postText.trim());
+		console.log("VALIDATION RESULTS", validResults);
+
+		if (!validResults.success) {
+			const formatted = validResults.error.format();
+			console.log(formatted);
+			dispatch({
+				type: FEED_ACTION.SET_ERROR_MESSAGE,
+				payload: { error: formatted._errors[0] },
+			});
+			return;
+		}
+
 		const image = await uploadImage();
 		const imageRef = `post_photos/${selectedImage.name}`;
 		const body = {
-			UserID: userData?.id,
-			DatePosted: datePosted.toISOString(),
-			PostText: postText,
-			Image: image,
-			ImageRef: imageRef,
+			userID: userData!.id,
+			postText: postText.trim(),
+			image,
+			imageRef,
 		};
+
 		try {
 			console.log("Posting...");
 			const response = await fetch(
@@ -157,10 +173,10 @@ const CreatePostModal: FC<CreatePostModalProps> = ({
 					</h5>
 				</div>
 				<textarea
-					placeholder="What do you want to talk about?"
+					placeholder="What's happening?"
 					value={postText}
 					onChange={(e) => setPostText(e.target.value)}
-					className="w-full max-h-[10rem] mt-4 px-4 outline-none placeholder:text-gray-600 resize-none"
+					className="w-full max-h-[10rem] text-2xl mt-4 px-4 outline-none placeholder:text-gray-600 resize-none"
 				></textarea>
 
 				{/* SELECTED IMAGE */}
@@ -219,6 +235,16 @@ const CreatePostModal: FC<CreatePostModalProps> = ({
 							Add a photo
 						</p>
 					</button>
+
+					<p
+						className={`${
+							SubmitBody.safeParse(postText.trim()).success
+								? "text-green-500"
+								: "text-red-500"
+						} px-3`}
+					>
+						{postText.trim().length}/128
+					</p>
 				</div>
 			</div>
 		</Modal>

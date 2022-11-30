@@ -472,6 +472,7 @@ const Jobs: NextPage<InferGetServerSidePropsType<typeof getServerSideProps>> = (
 export async function getServerSideProps(context: GetServerSidePropsContext) {
 	const search = (context.query.search as string) ?? "";
 	const location = (context.query.location as string) ?? "";
+	const distance = parseInt(context.query.distance as string) ?? 10;
 
 	// if search is empty do not server side render
 	if (search === "")
@@ -487,6 +488,7 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
 		new URLSearchParams({
 			search: search.split(" ").join("%20"),
 			location: location.split(" ").join("%20"),
+			distance: distance.toString(),
 		});
 
 	const response = await fetch(url);

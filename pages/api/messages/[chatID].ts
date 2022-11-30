@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { prisma } from "@lib/prisma";
+import { encrypt } from "@lib/hash";
 
 export default async function handler(
 	req: NextApiRequest,
@@ -26,13 +27,25 @@ export default async function handler(
 							password: false,
 						},
 					},
+					cipher: {
+						select: {
+							key: true,
+						},
+					},
 				},
 				orderBy: {
 					datePosted: "asc",
 				},
 			})
 			.then((response) => {
-				res.status(200).json(response);
+				res.status(200).json(
+					response.map((message) => {
+						return {
+							...message,
+							text: encrypt(message.text, message.cipher!.key),
+						};
+					})
+				);
 			})
 			.catch((error) => {
 				console.error(error);

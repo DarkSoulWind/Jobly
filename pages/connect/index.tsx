@@ -40,7 +40,10 @@ const RecommendedListing: FC = () => {
 					<p>Suiiiiiii</p>
 				</div>
 			</div>
-			<button className="py-1 px-4 rounded-full hover:bg-blue-100 transition-all text-blue-500 font-semibold border-2 border-blue-500">
+			<button
+				className="py-1 px-4 rounded-full hover:bg-blue-100 transition-all text-blue-500 font-semibold border-2 border-blue-500"
+				onClick={() => console.log("suiiii")}
+			>
 				Follow
 			</button>
 		</div>

@@ -10,6 +10,7 @@ import MessageComponent from "./Message";
 import { ChatState, Action, Message } from "@reducers/chatReducer";
 import { CHAT_ACTION } from "../../actions/types/chat";
 import { useRouter } from "next/router";
+import { encrypt } from "@lib/hash";
 
 interface ChatSectionProps {
 	chatState: ChatState;
@@ -29,6 +30,8 @@ const ChatSection: FC<ChatSectionProps> = ({ chatState, dispatch }) => {
 	) {
 		router.push("/404");
 	}
+
+	// TODO: turn this shit into a fucking hook its fucking hideous
 
 	// GET INITIAL MESSAGES FOR THE CHAT
 	// RUNS EVERYTIME THE SELECTED CHAT ID CHANGES
@@ -62,13 +65,14 @@ const ChatSection: FC<ChatSectionProps> = ({ chatState, dispatch }) => {
 		chatState.socket?.on("server new message", (message: Message) => {
 			// if the message belongs to that chat that you're in then it will be displayed
 			if (message.chatID === chatState.selectedChatID) {
-				console.log(
-					"the server says back:".toUpperCase(),
-					JSON.stringify(message, null, 4)
-				);
 				dispatch({
 					type: CHAT_ACTION.NEW_MESSAGE,
-					payload: { newMessage: message },
+					payload: {
+						newMessage: {
+							...message,
+							text: encrypt(message.text, message.cipher!.key),
+						},
+					},
 				});
 			}
 

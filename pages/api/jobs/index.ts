@@ -1,8 +1,7 @@
 // Next.js API route support: https://nextjs.org/docs/api-routes/introduction
 import type { NextApiRequest, NextApiResponse } from "next";
-import type { JobListing } from "../../../lib/scraper/scraper";
-import ReedScraper from "../../../lib/scraper/reedScraper";
-import StudentJobScraper from "../../../lib/scraper/studentJobScraper";
+import type { JobListing } from "@lib/scraper";
+import { ReedScraper, StudentJobScraper } from "@lib/scraper";
 
 interface Results {
 	keyword: string;
@@ -14,9 +13,14 @@ export default async function handler(
 	req: NextApiRequest,
 	res: NextApiResponse<Results>
 ) {
-	const { search = "software engineer", location = "london" } = req.query as {
+	const {
+		search = "software engineer",
+		location = "london",
+		distance = "10",
+	} = req.query as {
 		search: string;
 		location: string;
+		distance: string;
 	};
 
 	const reedResults = new ReedScraper(search, location);
@@ -27,8 +31,8 @@ export default async function handler(
 	const results = {
 		keyword: search,
 		location,
+		distance,
 		results: [...reedResults.results, ...studentJobResults.results],
 	};
 	res.json(results);
-	// res.json({ keyword: search, location, results: studentJobResults.results });
 }

@@ -1,16 +1,8 @@
-import React, {
-	FC,
-	FormEvent,
-	useEffect,
-	useState,
-	useRef,
-	Dispatch,
-} from "react";
+import React, { FC, FormEvent, useState, useRef, Dispatch } from "react";
 import MessageComponent from "./Message";
-import { ChatState, Action, Message } from "@reducers/chatReducer";
-import { CHAT_ACTION } from "../../actions/types/chat";
+import { ChatState, Action } from "@reducers/chatReducer";
 import { useRouter } from "next/router";
-import { encrypt } from "@lib/hash";
+import useChatSection from "@hooks/useChatSection";
 
 interface ChatSectionProps {
 	chatState: ChatState;
@@ -31,77 +23,7 @@ const ChatSection: FC<ChatSectionProps> = ({ chatState, dispatch }) => {
 		router.push("/404");
 	}
 
-	// TODO: turn this shit into a fucking hook its fucking hideous
-
-	// GET INITIAL MESSAGES FOR THE CHAT
-	// RUNS EVERYTIME THE SELECTED CHAT ID CHANGES
-	useEffect(() => {
-		const getMessagesByChatID = async () => {
-			try {
-				const response = await fetch(
-					`http://localhost:3000/api/messages/${chatState.selectedChatID}`
-				);
-				const data: Message[] = await response.json();
-
-				if (!response.ok)
-					throw new Error(JSON.stringify(data, null, 4));
-
-				// if successful, set the messages to that
-				dispatch({
-					type: CHAT_ACTION.SET_MESSAGES,
-					payload: { messages: data },
-				});
-			} catch (error) {
-				console.error(error);
-			}
-		};
-
-		getMessagesByChatID();
-	}, [chatState.selectedChatID]);
-
-	// RUNS EVERYTIME THE CHAT IS CHANGED
-	useEffect(() => {
-		// handling receiving messages from the server
-		chatState.socket?.on("server new message", (message: Message) => {
-			// if the message belongs to that chat that you're in then it will be displayed
-			if (message.chatID === chatState.selectedChatID) {
-				dispatch({
-					type: CHAT_ACTION.NEW_MESSAGE,
-					payload: {
-						newMessage: {
-							...message,
-							text: encrypt(message.text, message.cipher!.key),
-						},
-					},
-				});
-			}
-
-			// scroll to the bottom if you sent the message
-			setTimeout(() => {
-				if (message.sender.name === chatState.yourUsername) {
-					scrollDummy.current?.scrollIntoView({ behavior: "smooth" });
-				}
-			}, 100);
-		});
-
-		// handling deleted messages
-		chatState.socket?.on("server deleted message", ({ id, chatID }) => {
-			// only handle message if it is in the chat that you are in
-			if (chatID === chatState.selectedChatID) {
-				console.log("deleted message in this chat with id", id);
-				dispatch({
-					type: CHAT_ACTION.DELETE_MESSAGE,
-					payload: { messageID: id },
-				});
-			}
-		});
-
-		// unsubscribe from socket events when component is removed
-		return () => {
-			chatState.socket?.off("server new message");
-			chatState.socket?.off("server deleted message");
-		};
-	}, [chatState.messages]);
+	useChatSection(chatState, dispatch, scrollDummy);
 
 	// the send message form is submitted
 	const sendMessage = (e: FormEvent<HTMLFormElement>) => {
@@ -154,10 +76,19 @@ const ChatSection: FC<ChatSectionProps> = ({ chatState, dispatch }) => {
 											message.sender.name
 										}
 										// check to see if the author of the message is the same as the previous message
+										// and they were both posted on the same date
 										continuing={
 											message.sender?.name ===
-											chatState.messages[index - 1]
-												?.sender.name
+												chatState.messages[index - 1]
+													?.sender.name &&
+											new Date(
+												message.datePosted
+											).getDate() ===
+												new Date(
+													chatState.messages[
+														index - 1
+													].datePosted
+												).getDate()
 										}
 										chatState={chatState}
 										pfp={message.sender.image as string}

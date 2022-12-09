@@ -12,7 +12,6 @@ import { useQuery } from "react-query";
 import CreatePostModal from "@components/modal/CreatePostModal";
 import { Post, User } from "@prisma/client";
 import {
-	PostsUserPostLikesComments,
 	feedReducer,
 	FeedState,
 	UserWithPreferences,
@@ -51,7 +50,7 @@ const Feed: NextPage = () => {
 			`http://localhost:3000/api/user/email/${data?.user?.email}`
 		);
 		const responseData: UserWithPreferences | null = await response.json();
-		console.log("YOUR DATA:", JSON.stringify(responseData, null, 4));
+		// console.log("YOUR DATA:", JSON.stringify(responseData, null, 4));
 		return responseData;
 	};
 
@@ -62,6 +61,11 @@ const Feed: NextPage = () => {
 		const responseData: (Post & {
 			user: {
 				name: string;
+				image: string;
+			};
+			postLikes: {
+				userID: string;
+				postID: string;
 			};
 		})[] = await response.json();
 		return responseData;
@@ -325,7 +329,6 @@ const Feed: NextPage = () => {
 					/>
 				)}
 			</AnimatePresence>
-
 			<Footer />
 		</>
 	);

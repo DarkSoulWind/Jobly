@@ -8,12 +8,22 @@ export default async function handler(
 	if (req.method !== "POST") {
 		res.status(500).json({ message: "Please use the POST method." });
 	} else {
-		const { CommentID } = JSON.parse(req.body);
+		const { id } = JSON.parse(req.body);
 
 		try {
 			const response = await prisma.comment.delete({
 				where: {
-					id: CommentID,
+					id,
+				},
+				include: {
+					user: {
+						select: {
+							name: true,
+							image: true,
+							email: true,
+							preferences: true,
+						},
+					},
 				},
 			});
 			console.log("Deleted response", JSON.stringify(response, null, 4));

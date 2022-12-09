@@ -5,6 +5,7 @@ import React, {
 	useState,
 	Dispatch,
 	Fragment,
+	SetStateAction,
 } from "react";
 import { FaComment, FaEllipsisH, FaShare, FaThumbsUp } from "react-icons/fa";
 import { Post, User, PostLike, UserPreference, Comment } from "@prisma/client";
@@ -18,6 +19,8 @@ import { Action as FeedAction, FEED_ACTION } from "@reducers/feedReducer";
 import { AnimatePresence } from "framer-motion";
 import { Menu, Transition } from "@headlessui/react";
 import { HiFlag, HiTrash } from "react-icons/hi";
+import { useMutation, useQueryClient } from "react-query";
+import usePostLiked from "@hooks/usePostLiked";
 
 type PostWithLikesAndUser =
 	| Post & {
@@ -43,15 +46,41 @@ interface PostProps {
 const Post: FC<PostProps> = ({
 	postData,
 	yourData,
-	pageExpanded,
 	commentInputRef,
 	dispatch,
+	pageExpanded,
 }) => {
+	const queryClient = useQueryClient();
 	const router = useRouter();
 	// IS THIS POST LIKED BY YOU
-	const [postLiked, setPostLiked] = useState<boolean>(
-		postData?.postLikes?.filter((like) => like.userID === yourData?.id)
-			.length > 0 || false
+	const [postLiked, setPostLiked] = usePostLiked(
+		postData.postLikes,
+		yourData?.id ?? ""
+	);
+
+	const postLikeMutation = useMutation(
+		(data: { userID: string; postID: string; postLiked: boolean }) => {
+			return postLiked
+				? fetch("http://localhost:3000/api/post-likes/delete", {
+						method: "POST",
+						body: JSON.stringify({
+							userID: data.userID,
+							postID: data.postID,
+						}),
+				  })
+				: fetch("http://localhost:3000/api/post-likes/add", {
+						method: "POST",
+						body: JSON.stringify({
+							userID: data.userID,
+							postID: data.postID,
+						}),
+				  });
+		},
+		{
+			onSuccess: () => {
+				queryClient.invalidateQueries("posts");
+			},
+		}
 	);
 
 	// WHEN THE POST WAS POSTED RELATIVE TO TODAY
@@ -63,71 +92,30 @@ const Post: FC<PostProps> = ({
 	const [confirmDeleteOpen, setConfirmDeleteOpen, toggleConfirmDelete] =
 		useModal(false);
 
-	// CHECK IF THIS POST IS LIKED BY YOU OR NOT
-	useEffect(() => {
-		setPostLiked(
-			postData?.postLikes?.filter((like) => like.userID === yourData?.id)
-				.length > 0
-		);
-		console.log("post liked:", postLiked);
-	}, [yourData]);
-
 	const likePost = async () => {
-		console.log(
-			"your data before delete",
-			JSON.stringify(yourData, null, 4)
-		);
-		const userID = yourData?.id;
+		// console.log(
+		// 	"your data before delete",
+		// 	JSON.stringify(yourData, null, 4)
+		// );
+		const userID = yourData!.id;
 		const postID = postData?.id;
 		setLikeButtonLoading(true);
 
-		// LIKE POST IF POST HASNT BEEN LIKED
+		postLikeMutation.mutate({ userID, postID, postLiked });
+		// if post is being liked (wasn't liked before)
 		if (!postLiked) {
-			try {
-				const response = await fetch(
-					"http://localhost:3000/api/post-likes/add",
-					{
-						method: "POST",
-						body: JSON.stringify({ userID, postID }),
-					}
-				);
-				const data: PostLike = await response.json();
-
-				if (!response.ok) {
-					throw new Error(JSON.stringify(data, null, 4));
-				}
-
-				//  Add the like to the array and set post liked to true
-				console.log("Added a like!");
-				postData?.postLikes.push({ ...data });
-				setPostLiked(true);
-			} catch (error) {
-				console.error(error);
-			}
-			// ELSE REMOVE THE LIKE
+			postData.postLikes = [
+				...(postData.postLikes ?? []),
+				{ userID, postID },
+			];
+			setPostLiked(true);
+			// if post was alread liked (disliking)
 		} else {
-			try {
-				const response = await fetch(
-					"http://localhost:3000/api/post-likes/delete",
-					{ method: "POST", body: JSON.stringify({ userID, postID }) }
-				);
-				const data: PostLike = await response.json();
-
-				if (!response.ok) {
-					throw new Error(JSON.stringify(data, null, 4));
-				}
-
-				// Remove the like from the array and set post liked to false
-				console.log("Deleted a like!");
-				postData.postLikes = postData.postLikes.filter(
-					(post: PostLike) => {
-						post.userID !== data.userID;
-					}
-				);
-				setPostLiked(false);
-			} catch (error) {
-				console.error(error);
-			}
+			postData.postLikes = postData.postLikes.filter(
+				(postLike) =>
+					postLike.postID !== postID && postLike.userID !== userID
+			);
+			setPostLiked(false);
 		}
 		setLikeButtonLoading(false);
 	};
@@ -162,10 +150,12 @@ const Post: FC<PostProps> = ({
 			// if the post was deleted from the feed, then remove it from being rendered
 			// and display the success message
 			if (!pageExpanded && dispatch) {
-				dispatch({
-					type: FEED_ACTION.REMOVE_POST,
-					payload: { postID: postData.id },
-				});
+				// dispatch({
+				// 	type: FEED_ACTION.REMOVE_POST,
+				// 	payload: { postID: postData.id },
+				// });
+				queryClient.invalidateQueries("posts");
+
 				dispatch({
 					type: FEED_ACTION.SET_SUCCESS_MESSAGE,
 					payload: { success: "Post removed successfully!" },

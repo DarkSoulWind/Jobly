@@ -1,5 +1,5 @@
-import React, { FC, Fragment } from "react";
-import { Comment, User, UserPreference } from "@prisma/client";
+import { FC, Fragment, Dispatch, SetStateAction } from "react";
+import { Comment, Follow, UserPreference } from "@prisma/client";
 import { FaEllipsisH } from "react-icons/fa";
 import { useModal } from "@hooks/useModal";
 import Modal from "@components/modal/Modal";
@@ -9,19 +9,51 @@ import { AnimatePresence } from "framer-motion";
 import { Menu, Transition } from "@headlessui/react";
 import { HiFlag, HiTrash } from "react-icons/hi";
 
-type UserWithPreferences = User & { preferences: UserPreference | null };
-
-type CommentProps = {
+interface CommentProps {
 	commentData: Comment & {
-		user: User & {
+		user: {
+			image: string | null;
+			name: string;
+			email: string | null;
 			preferences: UserPreference | null;
 		};
 	};
-	yourData?: UserWithPreferences | null;
-	author: boolean;
-};
+	yourData?: {
+		image: string | null;
+		name: string;
+		preferences: UserPreference | null;
+		id: string;
+		following: Follow[];
+		followers: Follow[];
+	} | null;
+	setComments: Dispatch<
+		SetStateAction<
+			(Comment & {
+				user: {
+					name: string;
+					image: string | null;
+					preferences: UserPreference | null;
+					email: string | null;
+				};
+			})[]
+		>
+	>;
+	setStatus: Dispatch<
+		SetStateAction<{
+			success: string;
+			error: string;
+		}>
+	>;
+	isAuthor: boolean;
+}
 
-const Comment: FC<CommentProps> = ({ commentData, author, yourData }) => {
+const Comment: FC<CommentProps> = ({
+	commentData,
+	isAuthor,
+	yourData,
+	setComments,
+	setStatus,
+}) => {
 	const router = useRouter();
 
 	// WHEN THE COMMENT WAS POSTED RELATIVE TO TODAY
@@ -32,26 +64,37 @@ const Comment: FC<CommentProps> = ({ commentData, author, yourData }) => {
 		useModal(false);
 
 	const deleteComment = async () => {
-		const CommentID = commentData.id;
+		const id = commentData.id;
 		try {
 			console.log("Deleting comment...");
 			const response = await fetch(
 				`http://localhost:3000/api/comments/delete`,
 				{
 					method: "POST",
-					body: JSON.stringify({ CommentID }),
+					body: JSON.stringify({ id }),
 				}
 			);
-			const data = await response.json();
+			const data: Comment & {
+				user: {
+					image: string | null;
+					name: string;
+					email: string | null;
+					preferences: UserPreference | null;
+				};
+			} = await response.json();
 
 			if (!response.ok) {
-				throw new Error(data);
+				throw new Error(JSON.stringify(data, null, 4));
 			}
 
-			console.log("Deleted comment", JSON.stringify(data, null, 4));
+			setComments((comments) =>
+				comments.filter((comment) => comment.id !== data.id)
+			);
+			setStatus({ success: "Comment deleted!", error: "" });
 			toggleConfirmDelete();
 		} catch (error) {
 			console.error(error);
+			setStatus({ success: "", error: "Failed to delete comment." });
 		}
 	};
 
@@ -92,7 +135,7 @@ const Comment: FC<CommentProps> = ({ commentData, author, yourData }) => {
 						</span>
 					)}{" "}
 					{/* CHECKS IF THEY ARE OP */}
-					{author && (
+					{isAuthor && (
 						<span className="bg-slate-600 px-2 font-semibold text-white rounded-md">
 							Author
 						</span>

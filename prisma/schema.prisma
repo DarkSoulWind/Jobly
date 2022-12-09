@@ -68,7 +68,6 @@ model VerificationToken {
 }
 
 model UserPreference {
-  id            Int     @id @unique @default(autoincrement())
   userID        String  @unique
   firstName     String?
   lastName      String?
@@ -133,12 +132,11 @@ model Comment {
   userID      String
   postID      String
   commentText String
-  datePosted  DateTime
+  datePosted  DateTime @default(now())
   post        Post     @relation(fields: [postID], references: [id], onDelete: Cascade)
   user        User     @relation(fields: [userID], references: [id], onDelete: Cascade)
 
-  @@index([postID])
-  @@index([userID])
+  @@index([postID, userID])
 }
 
 model Chat {
@@ -149,7 +147,6 @@ model Chat {
 }
 
 model Participant {
-  id     Int    @id @default(autoincrement())
   userID String
   chatID String
   chat   Chat   @relation(fields: [chatID], references: [id], onDelete: Cascade)
@@ -157,6 +154,7 @@ model Participant {
 
   @@index([chatID])
   @@index([userID])
+  @@id([userID, chatID])
 }
 
 model Message {
@@ -175,22 +173,20 @@ model Message {
 }
 
 model MessageCipherKey {
-  id        String  @id @default(uuid())
-  messageID String  @unique
+  messageID String  @id
   message   Message @relation("message", fields: [messageID], references: [id], onDelete: Cascade)
   key       String  @db.VarChar(280)
 }
 
 model SavedJob {
-  id          String   @default(uuid())
   link        String
+  userID      String
   title       String
   employer    String
   location    String
   description String
   type        String
   dateAdded   DateTime @default(now())
-  userID      String
   user        User     @relation("user", fields: [userID], references: [id], onDelete: Cascade)
 
   @@id([userID, link])

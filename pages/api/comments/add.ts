@@ -9,24 +9,31 @@ export default async function handler(
 		res.status(500).json({ message: "Please use the POST method." });
 	} else {
 		const {
-			UserID,
-			PostID,
-			DatePosted,
-			CommentText,
+			userID,
+			postID,
+			commentText,
 		}: {
-			UserID: string;
-			PostID: string;
-			DatePosted: string;
-			CommentText: string;
+			userID: string;
+			postID: string;
+			commentText: string;
 		} = JSON.parse(req.body);
 
 		try {
 			const response = await prisma.comment.create({
 				data: {
-					userID: UserID,
-					postID: PostID,
-					datePosted: DatePosted,
-					commentText: CommentText,
+					userID,
+					postID,
+					commentText,
+				},
+				include: {
+					user: {
+						select: {
+							name: true,
+							image: true,
+							email: true,
+							preferences: true,
+						},
+					},
 				},
 			});
 

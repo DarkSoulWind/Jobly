@@ -19,7 +19,7 @@ const ContactDetailModal: FC<ContactDetailModalProps> = ({
 	return (
 		<Modal
 			title="Contact info"
-			open={modalOpen as boolean}
+			open={modalOpen}
 			confirmButton="Close"
 			confirmButtonAction={toggle}
 		>

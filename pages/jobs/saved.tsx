@@ -1,7 +1,7 @@
 import type { NextPage } from "next";
 import Head from "next/head";
 import Navbar from "@components/nav/Navbar";
-import React, { Fragment, useState } from "react";
+import React, { useState } from "react";
 import { useSession } from "next-auth/react";
 import { SavedJob } from "@prisma/client";
 import { useQuery } from "react-query";
@@ -9,8 +9,6 @@ import JobListingComponent from "@components/job/JobListing";
 import SelectedPreview from "@components/job/SelectedPreview";
 import { SiteType } from "@lib/scraper";
 import { useRouter } from "next/router";
-import { Menu, Transition } from "@headlessui/react";
-import { HiAcademicCap, HiBriefcase } from "react-icons/hi";
 
 const SavedJobsPage: NextPage = () => {
 	const router = useRouter();
@@ -67,7 +65,7 @@ const SavedJobsPage: NextPage = () => {
 							} = savedJob;
 							return (
 								<JobListingComponent
-									key={savedJob.id}
+									key={savedJob.link}
 									selected={index === selectedJob.index}
 									onClick={() =>
 										setSelectedJob({ index, link, type })

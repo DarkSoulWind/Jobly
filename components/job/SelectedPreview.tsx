@@ -6,10 +6,11 @@ import React, {
 	useEffect,
 	useState,
 } from "react";
-import type { JobPreview } from "@lib/scraper/scraper";
+import type { JobPreview, SiteType } from "@lib/scraper/scraper";
 import SkeletonLoadingJobPreview from "@components/job/SkeletonLoadingJobPreview";
 import { FaHeart } from "react-icons/fa";
 import { useSession } from "next-auth/react";
+import { useMutation, useQuery, useQueryClient } from "react-query";
 
 interface SelectedPreviewProps
 	extends DetailedHTMLProps<HTMLAttributes<HTMLDivElement>, HTMLDivElement> {
@@ -19,46 +20,61 @@ interface SelectedPreviewProps
 	router: NextRouter;
 }
 
+type SaveJobBody = {
+	link: string;
+	type: string;
+	email: string;
+	title: SiteType;
+	employer: string;
+	location: string;
+	description: string;
+};
+
 const SelectedPreview: FC<SelectedPreviewProps> = ({
 	link,
 	router,
 	type,
 	isSaved,
 }) => {
-	const [jobPreviewData, setJobPreviewData] = useState<JobPreview>();
-	const [isLoading, setIsLoading] = useState(false);
-	const { data: sessionData, status } = useSession();
+	const { data: sessionData, status: sessionStatus } = useSession();
+	const queryClient = useQueryClient();
 
-	console.log("is saved:", isSaved);
+	const saveJobMutation = useMutation(
+		(bodyData: SaveJobBody) => {
+			return fetch("http://localhost:3000/api/jobs/save/add", {
+				method: "POST",
+				body: JSON.stringify(bodyData),
+			});
+		},
+		{
+			onSuccess: () => {
+				console.log("Saved job!");
+				queryClient.invalidateQueries("saved-jobs");
+			},
+			onError: () => {
+				console.error("Unable to add to favourite jobs list");
+			},
+		}
+	);
+	// console.log("is saved:", isSaved);
+	const getPreviewjobs = async () => {
+		const response = await fetch("http://localhost:3000/api/jobs/preview", {
+			method: "POST",
+			body: JSON.stringify({ link, type }),
+		});
+		const data: JobPreview = await response.json();
+		return data;
+	};
 
-	// fetch job preview data when the link changes
-	useEffect(() => {
-		const getJobPreview = async () => {
-			setIsLoading(true);
-			setJobPreviewData(undefined);
-			try {
-				const response = await fetch(
-					"http://localhost:3000/api/jobs/preview",
-					{
-						method: "POST",
-						body: JSON.stringify({ link, type }),
-					}
-				);
-				const data: JobPreview = await response.json();
-				setJobPreviewData(data);
-			} catch (e) {
-				console.error(e);
-			} finally {
-				setIsLoading(false);
-			}
-		};
-
-		getJobPreview();
-	}, [link, type]);
+	const { data: jobPreviewData, isFetching: isFetchingJobPreview } = useQuery(
+		["job-preview", link, type],
+		getPreviewjobs,
+		{ refetchOnWindowFocus: false }
+	);
 
 	// need to save the job title, employer, location, description and date added
 	const saveJob = async () => {
-		if (status === "unauthenticated") return router.push("/auth");
+		if (sessionStatus === "unauthenticated") return router.push("/auth");
 
 		const bodyData = {
 			link,
@@ -70,26 +86,11 @@ const SelectedPreview: FC<SelectedPreviewProps> = ({
 			description: jobPreviewData?.description!,
 		};
 
-		console.log("body:", JSON.stringify(bodyData));
-
-		const response = await fetch(
-			"http://localhost:3000/api/jobs/save/add",
-			{
-				method: "POST",
-				body: JSON.stringify(bodyData),
-			}
-		);
-
-		if (!response.ok) {
-			console.error("Unable to add to favourite jobs list");
-			return;
-		}
-
-		const data = await response.json();
-		console.log(data);
+		console.log("Saving job:", JSON.stringify(bodyData));
+		saveJobMutation.mutate(bodyData);
 	};
 
-	if (isLoading) return <SkeletonLoadingJobPreview />;
+	if (isFetchingJobPreview) return <SkeletonLoadingJobPreview />;
 
 	return (
 		<aside className="top-[5rem] max-h-[90vh] w-full sticky p-5 border-[1px] max-w-[50rem] border-slate-300 bg-white rounded-lg">
@@ -109,11 +110,13 @@ const SelectedPreview: FC<SelectedPreviewProps> = ({
 			/>
 
 			<div className="flex my-3 justify-start items-center gap-2">
-				<button className="py-2 px-5 rounded-full bg-blue-500 hover:bg-blue-600 transition-all font-semibold text-white">
-					<a href={link} target="_blank">
-						Apply on website
-					</a>
-				</button>
+				<a
+					className="py-2 px-5 rounded-full bg-blue-500 hover:bg-blue-600 transition-all font-semibold text-white"
+					href={link}
+					target="_blank"
+				>
+					Apply on website
+				</a>
 
 				{/* SAVE JOB BUTTON */}
 				<button

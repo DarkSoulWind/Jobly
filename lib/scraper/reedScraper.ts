@@ -1,3 +1,4 @@
+import axios from "axios";
 import cheerio from "cheerio";
 import { Scraper, JobListing, JobPreview, SiteType } from "./scraper";
 
@@ -15,11 +16,15 @@ export default class ReedScraper extends Scraper {
 
 	public override async scrape(): Promise<void> {
 		return new Promise<void>(async (resolve, reject) => {
-			const response = await fetch(this.URL);
-			if (!response.ok) reject();
+			console.log(`Fetching ${this.URL}...`);
+			const response = await axios.get(this.URL);
+			if (response.status == 500) reject();
 
-			const html = await response.text();
+			console.log("Fetched successfully, awaiting text response...");
+			const html = await response.data;
+			console.log("Parsing html...");
 			const $ = cheerio.load(html);
+			console.log("HTML parsed successfully");
 			const results: JobListing[] = [];
 
 			$("article.job-result-card", html).each(function (
@@ -27,7 +32,7 @@ export default class ReedScraper extends Scraper {
 			) {
 				const link = $(this).find("a").attr("href") ?? "n/a";
 				const title = $(this)
-					.find("h3.job-result-heading__title")
+					.find("h2.job-result-heading__title")
 					.text()
 					.trim();
 				const description = $(this)
@@ -45,14 +50,16 @@ export default class ReedScraper extends Scraper {
 					.text()
 					.trim();
 
-				results.push({
+				const result: JobListing = {
 					type: "Reed",
 					link: `https://reed.co.uk${link}`,
 					title,
 					description,
 					employer,
 					location,
-				});
+				};
+				// console.log(result);
+				results.push(result);
 			});
 
 			this._results = results;
@@ -99,8 +106,8 @@ export default class ReedScraper extends Scraper {
 				salary,
 				location,
 				employmentType,
-				employer: { name: employer, logo: employerLogo },
 				description,
+				employer: { name: employer, logo: employerLogo },
 			});
 		});
 	}

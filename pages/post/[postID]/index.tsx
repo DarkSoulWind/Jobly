@@ -1,100 +1,74 @@
 "JOB POST PAGE";
 
-import React, { useEffect, useRef, useState } from "react";
-import type { GetStaticPropsContext, NextPage } from "next";
-import {
-	Post,
-	User,
-	UserPreference,
-	PostLike,
-	Comment,
-	Follow,
-} from "@prisma/client";
-import { prisma } from "@lib/prisma";
-import Navbar from "@components/nav/Navbar";
+import { useRef, useState } from "react";
+import type {
+	GetStaticPropsContext,
+	InferGetStaticPropsType,
+	NextPage,
+} from "next";
 import Head from "next/head";
-import PostComponent from "@components/post/Post";
 import { useRouter } from "next/router";
 import { useSession } from "next-auth/react";
-import { useQuery } from "react-query";
+import { UserPreference, Comment, Follow } from "@prisma/client";
+import { prisma } from "@lib/prisma";
+import Navbar from "@components/nav/Navbar";
+import PostComponent from "@components/post/Post";
 import CommentComponent from "@components/comments/Comment";
-
-// CANNOT USE INFER GET SERVER SIDE PROPS
-interface PostPageProps {
-	postData:
-		| Post & {
-				user: User & {
-					preferences: UserPreference | null;
-				};
-				comments: Comment[];
-				postLikes: PostLike[];
-		  };
-	posterData:
-		| (User & {
-				preferences: UserPreference | null;
-		  })
-		| null;
-	commentData: (Comment & {
-		user: User & {
-			preferences: UserPreference | null;
-		};
-	})[];
-}
+import Alert from "@components/alert/Alert";
+import { useQuery } from "react-query";
+import { AnimatePresence } from "framer-motion";
 
 type UserWithPreferences = {
+	image: string | null;
+	name: string;
 	preferences: UserPreference | null;
-	followers: Follow[];
-	following: Follow[];
 	id: string;
+	following: Follow[];
+	followers: Follow[];
 } | null;
 
-const PostPage: NextPage<PostPageProps> = ({
+const PostPage: NextPage<InferGetStaticPropsType<typeof getStaticProps>> = ({
 	postData,
 	posterData,
 	commentData,
 }) => {
 	const router = useRouter();
-	const { status, data } = useSession();
-	console.log(commentData);
+	const { status: sessionStatus, data } = useSession();
 
 	// STATE AND REFS
 	const commentInputRef = useRef<HTMLInputElement>(null);
-	const [CommentText, setCommentText] = useState("");
+	const [commentText, setCommentText] = useState("");
+	const [comments, setComments] = useState(commentData);
+	const [status, setStatus] = useState({ success: "", error: "" });
 
 	// YOUR DATA
-	// const [yourData, setYourData] = useState<UserWithPreferences | null>();
-
 	const getUserByEmail = async () => {
-		if (status === "authenticated") {
+		if (sessionStatus === "authenticated") {
 			const response = await fetch(
 				`http://localhost:3000/api/user/email/${data.user?.email}`
 			);
 			const responseData: UserWithPreferences | null =
 				await response.json();
-			console.log(
-				"YOUR DATA FROM RQ",
-				JSON.stringify(responseData, null, 4)
-			);
+			// console.log(
+			// 	"YOUR DATA FROM RQ",
+			// 	JSON.stringify(responseData, null, 4)
+			// );
 			return responseData;
 		}
 	};
 
 	const { data: yourData } = useQuery("yourData", getUserByEmail);
 
-	// useEffect(() => {
-
-	// 	getUserByEmail();
-	// }, []);
-
 	const postComment = async () => {
-		if (CommentText.trim().length < 5) return;
+		if (commentText.trim().length < 5) return;
 
 		try {
+			const userID = yourData?.id;
+			const postID = postData?.id;
 			const body = {
-				CommentText,
-				UserID: yourData?.id,
-				PostID: postData?.id,
-				DatePosted: new Date(Date.now()).toISOString(),
+				userID,
+				postID,
+				commentText,
 			};
 			console.log("Posting...");
 			const response = await fetch(
@@ -104,23 +78,34 @@ const PostPage: NextPage<PostPageProps> = ({
 					body: JSON.stringify(body),
 				}
 			);
-			const data = await response.json();
+			const data: Comment & {
+				user: {
+					name: string;
+					image: string | null;
+					email: string | null;
+					preferences: UserPreference | null;
+				};
+			} = await response.json();
 
 			if (!response.ok) {
-				throw new Error(data);
+				throw new Error(JSON.stringify(data, null, 4));
 			}
+
 			console.log(
 				"Comment added successfully",
 				JSON.stringify(data, null, 4)
 			);
+			setComments([...comments, { ...data }]);
 			setCommentText("");
+			setStatus({ success: "Comment posted successfully!", error: "" });
 		} catch (error) {
 			console.error(JSON.stringify(error, null, 4));
+			setStatus({ success: "", error: "Failed to post comment." });
 		}
 	};
 
 	return (
-		<div className="overflow-clip">
+		<>
 			<Head>
 				<title>
 					{posterData?.name} | "{postData?.postText.substring(0, 30)}
@@ -226,14 +211,14 @@ const PostPage: NextPage<PostPageProps> = ({
 									type="text"
 									ref={commentInputRef}
 									placeholder="Post a comment"
-									value={CommentText}
+									value={commentText}
 									onChange={(e) =>
 										setCommentText(e.target.value)
 									}
 									className="border-[1px] text-sm text-slate-600 border-slate-500 transition-all rounded-full w-full text-left px-4 py-3"
 								/>
 								{/* POST COMMENT BUTTON */}
-								{CommentText.trim().length > 0 && (
+								{commentText.trim().length > 0 && (
 									<button
 										onClick={postComment}
 										className="py-1 px-4 bg-blue-500 rounded-full hover:bg-blue-700 transition-all text-sm text-white font-semibold"
@@ -247,26 +232,56 @@ const PostPage: NextPage<PostPageProps> = ({
 
 						{/* COMMENTS */}
 						<div className="w-full flex flex-col items-start justify-start gap-3">
-							{commentData?.map((comment) => (
+							{comments.map((comment) => (
 								<div className="w-full" key={comment.id}>
 									<CommentComponent
+										yourData={yourData}
 										commentData={comment}
-										author={
+										isAuthor={
 											posterData?.email ===
 											comment.user.email
 										}
-										yourData={yourData}
+										setComments={setComments}
+										setStatus={setStatus}
 									/>
 								</div>
 							))}
 						</div>
-						{commentData.length === 0 && (
+						{comments.length === 0 && (
 							<h5 className="text-center">No comments</h5>
 						)}
 					</div>
 				</div>
 			</div>
-		</div>
+
+			<AnimatePresence
+				initial={false}
+				mode="wait"
+				onExitComplete={() => null}
+			>
+				{status.error !== "" && (
+					<Alert
+						level="Error"
+						message={status.error}
+						open={status.error.length > 0}
+						closeAction={() =>
+							setStatus({ success: "", error: "" })
+						}
+					/>
+				)}
+
+				{status.success !== "" && (
+					<Alert
+						level="Success"
+						message={status.success}
+						open={status.success.length > 0}
+						closeAction={() =>
+							setStatus({ success: "", error: "" })
+						}
+					/>
+				)}
+			</AnimatePresence>
+		</>
 	);
 };
 
@@ -294,8 +309,17 @@ export async function getStaticProps(context: GetStaticPropsContext) {
 			postLikes: true,
 			comments: true,
 			user: {
-				include: {
+				select: {
+					password: false,
+					name: true,
+					image: true,
 					preferences: true,
+					postLikes: {
+						select: {
+							userID: true,
+							postID: true,
+						},
+					},
 				},
 			},
 		},
@@ -314,20 +338,28 @@ export async function getStaticProps(context: GetStaticPropsContext) {
 		},
 		include: {
 			user: {
-				include: {
+				select: {
+					password: false,
+					image: true,
+					name: true,
+					email: true,
 					preferences: true,
 				},
 			},
 		},
 	});
 
+	// to preserve type when data is changed to json string and back
+	const data = { postData, posterData, commentData };
+	type Props = typeof data;
+
 	return {
 		props: {
-			postData: JSON.parse(JSON.stringify(postData)),
 			posterData,
+			postData: JSON.parse(JSON.stringify(postData)),
 			commentData: JSON.parse(JSON.stringify(commentData)),
 			fallback: false,
-		},
+		} as Props,
 	};
 }
 

@@ -9,6 +9,7 @@ import { useUploadFile } from "react-firebase-hooks/storage";
 import { v4 as uuid } from "uuid";
 import { storage } from "../../firebase-config";
 import { z } from "zod";
+import { useMutation, useQueryClient } from "react-query";
 
 type CreatePostModalProps = {
 	modalOpen: boolean;
@@ -23,6 +24,13 @@ const SubmitBody = z
 	.max(128, { message: "Post body must be 128 characters or fewer." })
 	.trim();
 
+type PostUpload = {
+	userID: string;
+	postText: string;
+	image: string | undefined;
+	imageRef: string;
+};
+
 const CreatePostModal: FC<CreatePostModalProps> = ({
 	modalOpen,
 	toggle,
@@ -30,6 +38,7 @@ const CreatePostModal: FC<CreatePostModalProps> = ({
 	dispatch,
 }) => {
 	const router = useRouter();
+	const queryClient = useQueryClient();
 	const [postText, setPostText] = useState("");
 	const [selectedImage, setSelectedImage] = useState<{
 		src: NamedCurve;
@@ -37,8 +46,21 @@ const CreatePostModal: FC<CreatePostModalProps> = ({
 		name?: string;
 	}>({ src: "" });
 	const uploadImageRef = useRef<HTMLInputElement>(null);
-
 	const [uploadFile, uploading] = useUploadFile();
+
+	const postUploadMutation = useMutation(
+		(post: PostUpload) => {
+			return fetch("http://localhost:3000/api/posts/add", {
+				method: "POST",
+				body: JSON.stringify(post),
+			});
+		},
+		{
+			onSuccess: () => {
+				queryClient.invalidateQueries("posts");
+			},
+		}
+	);
 
 	// display image that has been submitted from file input
 	const onImageChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -113,26 +135,13 @@ const CreatePostModal: FC<CreatePostModalProps> = ({
 
 		try {
 			console.log("Posting...");
-			const response = await fetch(
-				"http://localhost:3000/api/posts/add",
-				{
-					method: "POST",
-					body: JSON.stringify(body),
-				}
-			);
-			const data: Post = await response.json();
-
-			if (!response.ok) {
-				throw new Error(JSON.stringify(data, null, 4));
-			}
-
-			console.log("Posted successfully!", JSON.stringify(data, null, 4));
+			postUploadMutation.mutate(body);
+			console.log("Posted successfully!");
 			toggle();
 			dispatch({
 				type: FEED_ACTION.SET_SUCCESS_MESSAGE,
 				payload: { success: "Posted successfully!" },
 			});
-			router.push(`/post/${data.id}`);
 		} catch (error) {
 			dispatch({
 				type: FEED_ACTION.SET_ERROR_MESSAGE,

@@ -3,8 +3,9 @@
 import React, { useEffect, useReducer } from "react";
 import { NextPage } from "next";
 import Head from "next/head";
-import { FaPaperPlane, FaPenSquare } from "react-icons/fa";
+import Link from "next/link"
 import { useRouter } from "next/router";
+import { FaPaperPlane, FaPenSquare } from "react-icons/fa";
 import { useSession } from "next-auth/react";
 import io from "socket.io-client";
 import { useQuery } from "react-query";
@@ -23,7 +24,6 @@ import {
 	setYourUsername,
 } from "../../actions";
 import { Chats, AllFollows } from "../../actions/types/chat";
-import Link from "next/link";
 
 // GLOBAL STATE FOR THIS PAGE
 const initialChatState: ChatState = {
@@ -77,7 +77,6 @@ const DirectMessagesPage: NextPage = () => {
 		isError: chatFetchError,
 		data: chatData,
 	} = useQuery("fetchChats", getChatsByEmail);
-	console.log("chat data: ", JSON.stringify(chatData, null, 4));
 
 	// RUNS ONCE WHEN THE PAGE LOADS
 	// retrieves all chats that the user has participants in
@@ -100,10 +99,6 @@ const DirectMessagesPage: NextPage = () => {
 						) as AllFollows),
 					];
 					dispatch(setFollows({ follows }));
-					console.log(
-						"GOT THE FOLLOWERS AND FOLLOWING",
-						JSON.stringify(follows, null, 4)
-					);
 				})
 				.catch((error) => {
 					console.error(error);
@@ -117,7 +112,14 @@ const DirectMessagesPage: NextPage = () => {
 		dispatch(setSocket({ socket: newSocket }));
 
 		// update online status when connected
-		newSocket.emit("connected", data?.user?.email);
+		newSocket.emit("connected", {
+			email: data?.user?.email,
+			socketID: newSocket.id,
+		});
+
+		if (router.query.chat) {
+			newSocket.emit("join chat", router.query.chat);
+		}
 
 		// receive online status updates from the server
 		newSocket.on(
@@ -177,10 +179,6 @@ const DirectMessagesPage: NextPage = () => {
 
 								{/* CHAT LISTING */}
 								{chatData?.map((chat) => {
-									console.log(
-										"chat data:",
-										JSON.stringify(chat, null, 4)
-									);
 									const guy = chat.participants?.find(
 										(participant) =>
 											participant.user.name !==
@@ -204,6 +202,10 @@ const DirectMessagesPage: NextPage = () => {
 														chat: chat.id,
 													},
 												});
+												chatState.socket?.emit(
+													"join chat",
+													chat.id
+												);
 											}}
 											className={`w-full flex justify-start hover:bg-indigo-100 transition-all cursor-pointer items-center gap-3 py-2 px-3 ${
 												guy?.chatID ===

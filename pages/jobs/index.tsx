@@ -7,37 +7,34 @@ import {
 	lazy,
 	Suspense,
 	Fragment,
+	useCallback,
+	ChangeEvent,
 } from "react";
 import type {
 	NextPage,
 	GetServerSidePropsContext,
 	InferGetServerSidePropsType,
 } from "next";
+import { useRouter } from "next/router";
+import Head from "next/head";
 import {
 	JobSearchReducer,
 	JobSearchState,
 	JOB_SEARCH_ACTION,
 } from "@reducers/jobReducer";
-import { useRouter } from "next/router";
-import { FaLocationArrow, FaSearch } from "react-icons/fa";
-import Head from "next/head";
+import type { JobListing } from "@lib/scraper/scraper";
+import type { SavedJob } from "@prisma/client";
+
+// COMPONENTS
 import Navbar from "@components/nav/Navbar";
 import Footer from "@components/footer/Footer";
-import LoadingJobListing from "@components/job/SkeletonLoadingJob";
-import type { JobListing } from "@lib/scraper/scraper";
-import { useSession } from "next-auth/react";
-import type { SavedJob } from "@prisma/client";
-import { useQuery } from "react-query";
 import SkeletonLoadingJobPreview from "@components/job/SkeletonLoadingJobPreview";
-import { Listbox, Transition } from "@headlessui/react";
-import { HiCheckCircle, HiChevronDown } from "react-icons/hi";
-import { URLSearchParams } from "url";
-
-const JobListingComponent = lazy(() =>
-	import("@components/job/JobListing").then((module) => ({
-		default: module.default,
-	}))
-);
+import JobDistanceFilters from "@components/listbox/JobDistanceFilters";
+import JobResults from "@components/job/JobResults";
+import { useSession } from "next-auth/react";
+import { useQuery, useQueryClient } from "react-query";
+import { FaLocationArrow, FaSearch } from "react-icons/fa";
+import axios, { AxiosResponse } from "axios";
 
 const SelectedPreview = lazy(() =>
 	import("@components/job/SelectedPreview").then((module) => ({
@@ -63,9 +60,41 @@ const initState = (
 	return { ...state, jobResults, searchInput, locationInput };
 };
 
+const popularSearches = [
+	"Supermarket",
+	"Healthcare",
+	"Call Centre",
+	"Delivery Driver",
+	"Customer Service",
+	"Work From Home",
+	"Temporary",
+	"Full Time",
+	"Warehouse",
+	"Care Assistant",
+];
+
+// FILTER OPTIONS
+type JobType =
+	| "Part time"
+	| "Full time"
+	| "Voluntary"
+	| "Work from home"
+	| "Internship"
+	| "Weekend";
+const jobTypes: JobType[] = [
+	"Part time",
+	"Full time",
+	"Voluntary",
+	"Work from home",
+	"Internship",
+	"Weekend",
+];
+const distanceTypes = [10, 25, 50, 100];
+
 const Jobs: NextPage<InferGetServerSidePropsType<typeof getServerSideProps>> = (
 	props
 ) => {
+	const queryClient = useQueryClient();
 	const router = useRouter();
 	const { data: sessionData } = useSession();
 	const [jobSearchState, dispatch] = useReducer(
@@ -78,26 +107,42 @@ const Jobs: NextPage<InferGetServerSidePropsType<typeof getServerSideProps>> = (
 			})
 	);
 	const [selectedJob, setSelectedJob] = useState({
-		index: props.jobResults.results ? 0 : null,
-		link: props.jobResults.results
+		index: props.jobResults?.results ? 0 : null,
+		link: props.jobResults?.results
 			? props.jobResults?.results[0]?.link
 			: "",
-		type: props.jobResults.results
+		type: props.jobResults?.results
 			? props.jobResults?.results[0]?.type
 			: "",
 	});
-	const [distance, setDistance] = useState(10);
+	const [distance, setDistance] = useState(
+		props.jobResults?.distance ?? router.query.distance ?? 10
+	);
+	const [selectedJobTypes, setSelectedJobTypes] = useState<JobType[]>([]);
+	const [selectedJobTypesChecked, setSelectedJobTypesChecked] = useState(
+		new Array(jobTypes.length).fill(false)
+	);
+	const fetchJobs = useCallback(() => {
+		return getJobs(
+			jobSearchState.searchInput,
+			jobSearchState.locationInput,
+			distance.toString()
+		);
+	}, [jobSearchState.searchInput, jobSearchState.locationInput, distance]);
 
-	// FILTER OPTIONS
-	const jobTypes = [
-		"Part time",
-		"Full time",
-		"Voluntary",
-		"Work from home",
-		"Internship",
-		"Weekend",
-	];
-	const distanceTypes = [10, 25, 50, 100];
+	const {
+		data: jobData,
+		isFetching: isFetchingJobData,
+		isError: isErrorJobData,
+		isLoadingError: isLoadingErrorJobData,
+		isRefetchError: isRefetchErrorJobData,
+		refetch: refetchJobs,
+	} = useQuery(["job-data", distance], fetchJobs, {
+		initialData: props.jobResults,
+		enabled: true,
+		refetchOnWindowFocus: false,
+		retry: 3,
+	});
 
 	/**
 	 * It fetches the saved jobs from the database and returns them as an array of SavedJob objects
@@ -123,50 +168,42 @@ const Jobs: NextPage<InferGetServerSidePropsType<typeof getServerSideProps>> = (
 		const query = {
 			search: jobSearchState.searchInput,
 			location: jobSearchState.locationInput,
+			distance: distance.toString(),
+			type: selectedJobTypes,
 		};
+		refetchJobs();
+		router.push(
+			{
+				pathname: "/jobs",
+				query,
+			},
+			undefined,
+			{ shallow: true }
+		);
+		queryClient.invalidateQueries("job-preview");
+	};
 
-		dispatch({
-			type: JOB_SEARCH_ACTION.SET_LOADING,
-			payload: { loading: true },
-		});
+	const handleJobTypeChange = (index: number) => {
+		const updatedState = selectedJobTypesChecked.map((b, i) =>
+			i === index ? !b : b
+		);
 
-		try {
-			router.push(
-				{
-					pathname: "/jobs",
-					query,
-				},
-				undefined,
-				{ shallow: true }
-			);
-			const response = await fetch(
-				`http://localhost:3000/api/jobs?search=${jobSearchState.searchInput
-					.split(" ")
-					.join("%20")}&location=${jobSearchState.locationInput
-					.split(" ")
-					.join("%20")}`
-			);
-			const data: { results: JobListing[] } = await response.json();
-
-			if (!response.ok) throw new Error(JSON.stringify(data, null, 4));
-
-			console.log(JSON.stringify(data, null, 4));
-			dispatch({
-				type: JOB_SEARCH_ACTION.SET_JOB_RESULTS,
-				payload: { jobResults: data.results },
-			});
-			setSelectedJob({
-				index: 0,
-				link: data.results[0].link,
-				type: data.results[0].type,
-			});
-		} catch (error) {
-			console.error(error);
-		}
-
-		dispatch({
-			type: JOB_SEARCH_ACTION.SET_LOADING,
-			payload: { loading: false },
+		setSelectedJobTypesChecked(updatedState);
+		const d = updatedState.reduce((acc, val, i) => {
+			if (val === true) {
+				return [...acc, jobTypes[i]];
+			}
+			return acc;
+		}, []);
+		setSelectedJobTypes(d);
+		router.push({
+			pathname: "/jobs",
+			query: {
+				search: jobSearchState.searchInput,
+				location: jobSearchState.locationInput,
+				distance,
+				type: d,
+			},
 		});
 	};
 
@@ -241,87 +278,28 @@ const Jobs: NextPage<InferGetServerSidePropsType<typeof getServerSideProps>> = (
 					<input
 						type="submit"
 						className="py-2 px-4 cursor-pointer bg-blue-700 hover:bg-blue-900 text-white disabled:bg-blue-900 disabled:cursor-wait ease-in-out transition-all font-semibold rounded-full"
-						disabled={jobSearchState.loading}
+						disabled={isFetchingJobData}
 						value="Find job"
 					/>
 				</form>
 
+				{/* ONLY SHOW THIS SECTION IF ON "/jobs" (no search has been made) */}
 				{router.query.search ? (
 					<div className="w-4/5 relative px-6 py-5 flex justify-center items-start gap-5">
 						{/* FILTERS */}
 						<aside className="px-5 sticky top-[5rem] border-[1px] hidden md:flex flex-col divide-y-2 border-slate-300 bg-white rounded-lg">
 							{/* DISTANCE FILTERS */}
-							<Listbox value={distance} onChange={setDistance}>
-								<div className="py-5 relative">
-									<Listbox.Label className="font-bold">
-										Distance
-									</Listbox.Label>
-									<Listbox.Button className="relative w-full cursor-pointer transition-all rounded-lg bg-white hover:bg-slate-50 py-3 pl-3 pr-10 text-left shadow-md focus:outline-none focus-visible:border-indigo-500 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75 focus-visible:ring-offset-2 focus-visible:ring-offset-orange-300 sm:text-sm">
-										<span className="block truncate">
-											Within {distance}km
-										</span>
-										<span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
-											<HiChevronDown
-												className="h-5 w-5 text-gray-400"
-												aria-hidden="true"
-											/>
-										</span>
-									</Listbox.Button>
-									<Transition
-										as={Fragment}
-										leave="transition ease-in duration-100"
-										leaveFrom="opacity-100"
-										leaveTo="opacity-0"
-									>
-										<Listbox.Options className="absolute mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm">
-											{distanceTypes.map(
-												(value, index) => (
-													<Listbox.Option
-														key={index}
-														className={({
-															active,
-														}) =>
-															`relative cursor-pointer select-none py-2 pl-10 pr-4 transition-all duration-300 ${
-																active
-																	? "bg-amber-100 text-amber-900"
-																	: "text-gray-900"
-															}`
-														}
-														value={value}
-													>
-														{({ selected }) => (
-															<>
-																<span
-																	className={`block truncate ${
-																		selected
-																			? "font-medium"
-																			: "font-normal"
-																	}`}
-																>
-																	{value}
-																</span>
-																{selected ? (
-																	<span className="absolute inset-y-0 left-0 flex items-center pl-3 text-amber-600">
-																		<HiCheckCircle
-																			className="h-5 w-5"
-																			aria-hidden="true"
-																		/>
-																	</span>
-																) : null}
-															</>
-														)}
-													</Listbox.Option>
-												)
-											)}
-										</Listbox.Options>
-									</Transition>
-								</div>
-							</Listbox>
+							<JobDistanceFilters
+								distance={distance}
+								setDistance={setDistance}
+								distanceTypes={distanceTypes}
+								jobSearchState={jobSearchState}
+							/>
 
 							{/* JOB TYPE FILTERS */}
 							<div className="w-[15rem] py-5 flex flex-col items-start gap-3">
 								<p className="font-bold">Type</p>
-								{jobTypes.map((jobType) => (
+								{jobTypes.map((jobType, index) => (
 									<div
 										key={jobType}
 										className="w-full flex justify-start gap-4 items-center"
@@ -329,7 +307,16 @@ const Jobs: NextPage<InferGetServerSidePropsType<typeof getServerSideProps>> = (
 										<input
 											type="checkbox"
 											name={jobType}
-											value={jobType}
+											value={jobType
+												.toLowerCase()
+												.split(" ")
+												.join("-")}
+											checked={
+												selectedJobTypesChecked[index]
+											}
+											onChange={() =>
+												handleJobTypeChange(index)
+											}
 											className="w-5 h-5"
 										/>
 										<label>{jobType}</label>
@@ -338,63 +325,14 @@ const Jobs: NextPage<InferGetServerSidePropsType<typeof getServerSideProps>> = (
 							</div>
 						</aside>
 
-						{/* JOB RESULTS */}
-						<main className="w-full h-full">
-							{jobSearchState.jobResults &&
-							jobSearchState.jobResults.length > 0 ? (
-								<>
-									{
-										// SHOW SKELETON JOB RESULTS WHEN LOADING
-										jobSearchState.loading ? (
-											<section className="flex flex-col items-start justify-start gap-5">
-												{[1, 2, 3, 4, 5].map(() => (
-													<LoadingJobListing />
-												))}
-											</section>
-										) : (
-											// ALL JOB LISTINGS
-											<section className="w-full flex flex-col items-start gap-5">
-												{jobSearchState.jobResults.map(
-													(job, index) => {
-														return (
-															<Suspense
-																fallback={
-																	<LoadingJobListing />
-																}
-															>
-																<JobListingComponent
-																	onClick={() => {
-																		setSelectedJob(
-																			{
-																				index,
-																				link: job.link,
-																				type: job.type,
-																			}
-																		);
-																	}}
-																	selected={
-																		selectedJob.index ===
-																		index
-																	}
-																	key={index}
-																	job={job}
-																/>
-															</Suspense>
-														);
-													}
-												)}
-											</section>
-										)
-									}
-								</>
-							) : (
-								<section className="text-center h-full  text-black">
-									<p className="text-4xl font-bold">
-										No jobs available
-									</p>
-								</section>
-							)}
-						</main>
+						<JobResults
+							isFetchingJobData={isFetchingJobData}
+							isErrorJobData={isErrorJobData}
+							isLoadingErrorJobData={isLoadingErrorJobData}
+							isRefetchErrorJobData={isRefetchErrorJobData}
+							jobData={jobData}
+							selectedJob={{ job: selectedJob, setSelectedJob }}
+						/>
 
 						{selectedJob && (
 							<Suspense fallback={<SkeletonLoadingJobPreview />}>
@@ -421,37 +359,26 @@ const Jobs: NextPage<InferGetServerSidePropsType<typeof getServerSideProps>> = (
 						</p>
 
 						<div className="flex flex-wrap gap-3 items-center justify-center">
-							{[
-								"Supermarket",
-								"Healthcare",
-								"Call Centre",
-								"Delivery Driver",
-								"Customer Service",
-								"Work From Home",
-								"Temporary",
-								"Full Time",
-								"Warehouse",
-								"Care Assistant",
-							].map((job, index) => (
+							{popularSearches.map((job, index) => (
 								<button
+									key={index}
 									className="p-2 flex items-center gap-3 bg-gray-300 hover:bg-gray-400/60 transition-all rounded-lg text-sm font-light"
 									onClick={() => {
 										dispatch({
 											type: JOB_SEARCH_ACTION.SET_SEARCH_INPUTS,
 											payload: { searchInput: job },
 										});
-										// router.push({
-										// 	pathname: "/jobs",
-										// 	query: {
-										// 		search: job,
-										// 		location: "",
-										// 	},
-										// });
-										router.push(
-											`/jobs?search=${job}&location=`
-										);
+										router.push({
+											pathname: "/jobs",
+											query: {
+												search: job,
+												location:
+													jobSearchState.locationInput,
+												distance: 10,
+												type: selectedJobTypes,
+											},
+										});
 									}}
-									key={index}
 								>
 									<FaSearch className="fill-slate-600" />
 
@@ -468,35 +395,62 @@ const Jobs: NextPage<InferGetServerSidePropsType<typeof getServerSideProps>> = (
 	);
 };
 
+async function getJobs(search: string, location: string, distance: string) {
+	const url =
+		"http://localhost:3000/api/jobs?" +
+		new URLSearchParams({
+			search,
+			location,
+			distance,
+		});
+
+	// Type of object we get back from the api
+	type ResponseObject = {
+		keyword: string;
+		location: string;
+		distance: string;
+		results: JobListing[];
+	};
+	const response = await axios.get<any, AxiosResponse<ResponseObject, Error>>(
+		url
+	);
+	const responseData = await response.data;
+
+	console.log("Fetched jobs", responseData);
+	return responseData;
+}
+
 // SERVER SIDE RENDER PAGE BASED ON SEARCH AND LOCATION QUERY
 export async function getServerSideProps(context: GetServerSidePropsContext) {
 	const search = (context.query.search as string) ?? "";
 	const location = (context.query.location as string) ?? "";
-	const distance = parseInt(context.query.distance as string) ?? 10;
+	let distance = parseInt(context.query.distance as string) ?? 10;
+	if (isNaN(distance)) distance = 10;
 
 	// if search is empty do not server side render
 	if (search === "")
 		return {
 			props: {
 				search,
-				jobResults: { keyword: null, location: null, results: [] },
+				jobResults: {
+					keyword: "",
+					location: "",
+					distance: "",
+					results: [] as JobListing[],
+				},
 			},
 		};
 
-	const url =
-		"http://localhost:3000/api/jobs?" +
-		new URLSearchParams({
-			search: search.split(" ").join("%20"),
-			location: location.split(" ").join("%20"),
-			distance: distance.toString(),
-		});
-
-	const response = await fetch(url);
 	const jobResults: {
 		keyword: string;
 		location: string;
+		distance: string;
 		results: JobListing[];
-	} = await response.json();
+	} = await getJobs(
+		search.split(" ").join("%20"),
+		location.split(" ").join("%20"),
+		distance.toString()
+	);
 
 	return { props: { search, jobResults } };
 }

@@ -31,7 +31,14 @@ export default async function handler(
 						user: {
 							select: {
 								name: true,
+								image: true,
 								password: false,
+							},
+						},
+						postLikes: {
+							select: {
+								userID: true,
+								postID: true,
 							},
 						},
 					},

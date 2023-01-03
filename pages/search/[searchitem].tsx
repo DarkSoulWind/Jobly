@@ -21,16 +21,16 @@ export interface SearchResults {
 		name: string;
 	}[];
 	posts: {
-		User: {
+		user: {
 			name: string;
 		};
-		PostID: number;
-		PostText: string;
-		Image: string | null;
+		id: number;
+		postText: string;
+		image: string | null;
 	}[];
 	comments: {
-		PostID: number;
-		CommentText: string;
+		postID: number;
+		commentText: string;
 	}[];
 }
 

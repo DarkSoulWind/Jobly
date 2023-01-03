@@ -2,8 +2,8 @@
 
 import type {
 	NextPage,
-	GetStaticPropsContext,
-	InferGetStaticPropsType,
+	InferGetServerSidePropsType,
+	GetServerSidePropsContext,
 } from "next";
 import React, { useState, useEffect, useReducer } from "react";
 import { v4 as uuid } from "uuid";
@@ -11,23 +11,23 @@ import Head from "next/head";
 import Navbar from "@components/nav/Navbar";
 import Footer from "@components/footer/Footer";
 import { FaCamera, FaEnvelope, FaLocationArrow } from "react-icons/fa";
-import { useModal } from "@hooks/useModal";
+import { useModal } from "@lib/hooks/useModal";
 import EditProfileModal from "@components/modal/EditProfileModal";
 import ContactDetailModal from "@components/modal/ContactDetailModal";
 import { prisma } from "@lib/prisma";
-import { User, Comment, UserPreference, Post, Follow } from "@prisma/client";
+import { User, UserPreference, Post, Follow } from "@prisma/client";
 import {
-	// UserProfile,
 	profileReducer,
 	ProfileState,
 	PROFILE_ACTION,
-} from "@reducers/profileReducer";
+} from "@lib/reducers/profileReducer";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/router";
-import { useDate } from "@hooks/useDate";
+import { useDate } from "@lib/hooks/useDate";
 import { AnimatePresence, motion } from "framer-motion";
 import Alert from "@components/alert/Alert";
 import FollowersModal from "@components/modal/FollowersModal";
+import Markdown from "@components/markdown/Markdown";
 
 type UserPreferencesFollows =
 	| (User & {
@@ -46,7 +46,7 @@ type FollowResponse = {
 export const initProfileState = ({
 	profile,
 }: {
-	profile: InferGetStaticPropsType<typeof getStaticProps>;
+	profile: InferGetServerSidePropsType<typeof getServerSideProps>;
 }): ProfileState => {
 	return {
 		...profile,
@@ -55,10 +55,9 @@ export const initProfileState = ({
 	};
 };
 
-// const UserProfile: NextPage<UserProfileProps> = ({ profile }) => {
-const UserProfile: NextPage<InferGetStaticPropsType<typeof getStaticProps>> = (
-	props
-) => {
+const UserProfile: NextPage<
+	InferGetServerSidePropsType<typeof getServerSideProps>
+> = (props) => {
 	const router = useRouter();
 	const { data } = useSession();
 	// console.log("PROFILE DATA:", JSON.stringify(profile, null, 4));
@@ -140,7 +139,6 @@ const UserProfile: NextPage<InferGetStaticPropsType<typeof getStaticProps>> = (
 			followingId: profileState.id,
 		};
 		// if not following, create a new follow
-		console.log("Are you following tho?", profileState.isFollowing);
 		if (!profileState.isFollowing) {
 			try {
 				const response = await fetch(
@@ -411,7 +409,6 @@ const UserProfile: NextPage<InferGetStaticPropsType<typeof getStaticProps>> = (
 									whileHover={{ scale: 1.1 }}
 									whileTap={{ scale: 0.9 }}
 									transition={{
-										// ease: "easeInOut",
 										duration: 0.3,
 									}}
 									onClick={
@@ -458,38 +455,34 @@ const UserProfile: NextPage<InferGetStaticPropsType<typeof getStaticProps>> = (
 											? "commented"
 											: "posted"}{" "}
 										this{" "}
-										{!isPost(activity) ? (
+										{isPost(activity) ? (
+											""
+										) : (
 											<span>
 												on{" "}
-												<span className="font-semibold">
+												<Markdown
+													disabled
+													className="font-semibold"
+												>
 													{activity.post.postText}
-												</span>
+												</Markdown>
 											</span>
-										) : (
-											""
 										)}{" "}
 										• {useDate(activity.datePosted, true)}
 									</p>
 									<div className="pt-1 flex justify-start items-start gap-3">
-										{isPost(activity) &&
-											(activity as Post).image && (
-												<img
-													src={
-														(activity as Post)
-															.image as string
-													}
-													className="max-w-[4rem] max-h-[4rem]"
-													alt={
-														(activity as Post)
-															.postText
-													}
-												/>
-											)}
-										<p>
-											{!isPost(activity)
-												? activity.commentText
-												: activity.postText}
-										</p>
+										{isPost(activity) && activity.image && (
+											<img
+												src={activity.image}
+												className="max-w-[4rem] max-h-[4rem]"
+												alt={activity.postText}
+											/>
+										)}
+										<Markdown disabled>
+											{isPost(activity)
+												? activity.postText
+												: activity.commentText}
+										</Markdown>
 									</div>
 								</div>
 							);
@@ -505,7 +498,10 @@ const UserProfile: NextPage<InferGetStaticPropsType<typeof getStaticProps>> = (
 						{profileState.interests?.length != 1 ? (
 							["football", "hockey", "computers"].map(
 								(interest) => (
-									<div className="bg-indigo-500 py-1 px-4 rounded-full">
+									<div
+										key={interest}
+										className="bg-indigo-500 py-1 px-4 rounded-full"
+									>
 										<p className="text-sm font-semibold text-white">
 											{interest}
 										</p>
@@ -558,27 +554,10 @@ const UserProfile: NextPage<InferGetStaticPropsType<typeof getStaticProps>> = (
 	);
 };
 
-export async function getStaticPaths() {
-	const users = await prisma.user.findMany({
-		select: {
-			name: true,
-		},
-	});
-
-	const paths = users.map((user) => {
-		return {
-			params: {
-				username: user.name,
-			},
-		};
-	});
-
-	return { paths, fallback: false };
-}
-
-export async function getStaticProps(context: GetStaticPropsContext) {
-	const { username } = context.params as { username: string };
-	console.log("THE USERNAME:", username);
+export const getServerSideProps = async (
+	context: GetServerSidePropsContext<{ username: string }>
+) => {
+	const username = context.params?.username;
 
 	// DO NOT INCLUDE PASSWORDS!!
 	const profile = await prisma.user.findFirst({
@@ -607,7 +586,6 @@ export async function getStaticProps(context: GetStaticPropsContext) {
 				},
 			},
 			phoneNumber: true,
-			password: false,
 			followers: {
 				select: {
 					followerId: true,
@@ -616,6 +594,7 @@ export async function getStaticProps(context: GetStaticPropsContext) {
 			},
 			following: true,
 			id: true,
+			password: false,
 		},
 	});
 
@@ -623,9 +602,7 @@ export async function getStaticProps(context: GetStaticPropsContext) {
 	type Props = typeof profile;
 	return {
 		props: { ...(JSON.parse(JSON.stringify(profile)) as Props) },
-		// props: { ...profile },
-		revalidate: 10,
 	};
-}
+};
 
 export default UserProfile;

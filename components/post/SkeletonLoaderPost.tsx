@@ -1,8 +1,13 @@
-import React, { FC } from "react";
+import React, { DetailedHTMLProps, FC, HTMLAttributes } from "react";
 
-const SkeletonLoaderPost: FC = () => {
+const SkeletonLoaderPost: FC<
+	DetailedHTMLProps<HTMLAttributes<HTMLDivElement>, HTMLDivElement>
+> = ({ key }) => {
 	return (
-		<div className="top-[5rem] w-full sticky bg-white shadow-lg shadow-slate-300 rounded-lg overflow-clip border-[1px] border-slate-300">
+		<div
+			key={key}
+			className="top-[5rem] w-full sticky bg-white shadow-lg shadow-slate-300 rounded-lg overflow-clip border-[1px] border-slate-300"
+		>
 			<div className="px-4 py-1">
 				<div className="h-[2rem]"></div>
 

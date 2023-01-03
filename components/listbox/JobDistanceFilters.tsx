@@ -8,7 +8,8 @@ import React, {
 import router from "next/router";
 import { Listbox, Transition } from "@headlessui/react";
 import { HiChevronDown, HiCheckCircle } from "react-icons/hi";
-import { JobSearchState } from "@reducers/jobReducer";
+import { JobSearchState } from "@lib/reducers/jobReducer";
+import { useQueryClient } from "react-query";
 
 interface JobDistanceFiltersProps
 	extends DetailedHTMLProps<HTMLAttributes<HTMLDivElement>, HTMLDivElement> {
@@ -24,15 +25,16 @@ const JobDistanceFilters: FC<JobDistanceFiltersProps> = ({
 	distanceTypes,
 	jobSearchState,
 }) => {
+	const queryClient = useQueryClient();
+
 	return (
 		<Listbox
 			value={distance}
 			onChange={(e) => {
 				router.push(
 					{
-						pathname: "/jobs",
+						pathname: `/jobs/search/${jobSearchState.searchInput}`,
 						query: {
-							search: jobSearchState.searchInput,
 							location: jobSearchState.locationInput,
 							distance: e,
 						},
@@ -41,6 +43,7 @@ const JobDistanceFilters: FC<JobDistanceFiltersProps> = ({
 					{ shallow: true }
 				);
 				setDistance(e);
+				queryClient.invalidateQueries("job-preview");
 			}}
 		>
 			<div className="py-5 relative">

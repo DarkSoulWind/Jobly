@@ -7,7 +7,7 @@ import Head from "next/head";
 import Navbar from "@components/nav/Navbar";
 import Footer from "@components/footer/Footer";
 import LookingForJob from "@public/images/LookingForJob.png";
-import { useModal } from "@hooks/useModal";
+import { useModal } from "@lib/hooks/useModal";
 import { useQuery } from "react-query";
 import CreatePostModal from "@components/modal/CreatePostModal";
 import { Post, User } from "@prisma/client";
@@ -16,7 +16,7 @@ import {
 	FeedState,
 	UserWithPreferences,
 	FEED_ACTION,
-} from "@reducers/feedReducer";
+} from "@lib/reducers/feedReducer";
 import PostComponent from "@components/post/Post";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/router";
@@ -258,7 +258,11 @@ const Feed: NextPage = () => {
 						{/* SHOW POSTS */}
 						<div className="flex flex-col w-full gap-2">
 							{postsFetchLoading &&
-								[1, 2, 3].map(() => <SkeletonLoaderPost />)}
+								new Array(3)
+									.fill(1)
+									.map((i, index) => (
+										<SkeletonLoaderPost key={index} />
+									))}
 
 							{postsFetchError && <p>Error loading posts.</p>}
 

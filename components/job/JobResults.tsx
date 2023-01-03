@@ -9,6 +9,12 @@ import React, {
 } from "react";
 import LoadingJobListing from "@components/job/SkeletonLoadingJob";
 import { JobListing } from "@lib/scraper";
+import {
+	FetchNextPageOptions,
+	InfiniteData,
+	InfiniteQueryObserverResult,
+	useQueryClient,
+} from "react-query";
 
 const JobListingComponent = lazy(() =>
 	import("@components/job/JobListing").then((module) => ({
@@ -19,16 +25,31 @@ const JobListingComponent = lazy(() =>
 interface JobResultsProps
 	extends DetailedHTMLProps<HTMLAttributes<HTMLElement>, HTMLElement> {
 	isFetchingJobData: boolean;
+	isFetchingNextPage: boolean;
 	isErrorJobData: boolean;
 	isLoadingErrorJobData: boolean;
 	isRefetchErrorJobData: boolean;
-	jobData:
-		| {
+	hasNextPage?: boolean;
+	fetchNextPage: (options?: FetchNextPageOptions | undefined) => Promise<
+		InfiniteQueryObserverResult<
+			{
 				keyword: string;
 				location: string;
 				distance: string;
 				results: JobListing[];
-		  }
+				nextCursor: number;
+			},
+			unknown
+		>
+	>;
+	jobData:
+		| InfiniteData<{
+				keyword: string;
+				location: string;
+				distance: string;
+				results: JobListing[];
+				nextCursor: number;
+		  }>
 		| undefined;
 	selectedJob: {
 		job: {
@@ -49,38 +70,39 @@ interface JobResultsProps
 const JobResults: FC<JobResultsProps> = ({
 	jobData,
 	selectedJob,
+	fetchNextPage,
 	isFetchingJobData,
+	isFetchingNextPage,
 	isErrorJobData,
 	isLoadingErrorJobData,
 	isRefetchErrorJobData,
+	hasNextPage,
 }) => {
-	if (isFetchingJobData)
-		return (
-			<section className="flex flex-col w-full h-full items-start justify-start gap-5">
-				{[1, 2, 3, 4, 5].map(() => (
-					<LoadingJobListing />
-				))}
-			</section>
-		);
+	const queryClient = useQueryClient();
 
-	if (
-		isErrorJobData ||
-		isLoadingErrorJobData ||
-		isRefetchErrorJobData ||
-		!jobData
-	)
+	if (isErrorJobData || isLoadingErrorJobData || isRefetchErrorJobData)
 		return (
 			<section className="text-center h-full w-full text-black">
 				<p className="text-4xl font-bold">Error fetching jobs</p>
 			</section>
 		);
 
-	if (jobData.results.length === 0)
+	if (jobData?.pages.flatMap((page) => page.results).length === 0)
 		return (
 			<section className="text-center h-full w-full  text-black">
 				<p className="text-4xl font-bold">No jobs available</p>
 			</section>
 		);
+
+	if (isFetchingJobData && !isFetchingNextPage) {
+		return (
+			<section className="flex flex-col w-full h-full items-start justify-start gap-5">
+				{new Array(10).fill(1).map((a, i) => (
+					<LoadingJobListing key={i} />
+				))}
+			</section>
+		);
+	}
 
 	return (
 		<>
@@ -88,25 +110,50 @@ const JobResults: FC<JobResultsProps> = ({
 			<main className="w-full h-full">
 				{/* // ALL JOB LISTINGS */}
 				<section className="w-full flex flex-col items-start gap-5">
-					{jobData.results.map((job, index) => {
-						return (
-							<Suspense fallback={<LoadingJobListing />}>
-								<JobListingComponent
-									onClick={() => {
-										selectedJob.setSelectedJob({
-											index,
-											link: job.link,
-											type: job.type,
-										});
-									}}
-									selected={selectedJob.job.index === index}
+					{jobData?.pages
+						.flatMap((page) => page.results)
+						.map((job, index) => {
+							return (
+								<Suspense
 									key={index}
-									job={job}
-								/>
-							</Suspense>
-						);
-					})}
+									fallback={<LoadingJobListing />}
+								>
+									<JobListingComponent
+										onClick={() => {
+											selectedJob.setSelectedJob({
+												index,
+												link: job.link,
+												type: job.type,
+											});
+										}}
+										selected={
+											selectedJob.job.index === index
+										}
+										job={job}
+									/>
+								</Suspense>
+							);
+						})}
 				</section>
+				{isFetchingNextPage && (
+					<section className="flex py-5 flex-col w-full h-full items-start justify-start gap-5">
+						{new Array(10).fill(1).map((a, i) => (
+							<LoadingJobListing key={i} />
+						))}
+					</section>
+				)}
+				{hasNextPage && (
+					<div className="w-full flex justify-center py-5">
+						<button
+							onClick={async () => {
+								await fetchNextPage();
+							}}
+							className="bg-blue-500 w-full py-1 px-5 font-bold rounded-full text-white hover:bg-blue-600 transition-all"
+						>
+							Show more
+						</button>
+					</div>
+				)}
 			</main>
 		</>
 	);

@@ -1,9 +1,8 @@
 import React, { ChangeEvent, Dispatch, FC, useRef, useState } from "react";
 import Modal from "./Modal";
-import { User, Post } from "@prisma/client";
-import { Action as FeedAction, FEED_ACTION } from "@reducers/feedReducer";
+import { User } from "@prisma/client";
+import { Action as FeedAction, FEED_ACTION } from "@lib/reducers/feedReducer";
 import { FaHashtag, FaImage, FaTimesCircle } from "react-icons/fa";
-import { useRouter } from "next/router";
 import { getDownloadURL, ref, StorageReference } from "firebase/storage";
 import { useUploadFile } from "react-firebase-hooks/storage";
 import { v4 as uuid } from "uuid";
@@ -37,7 +36,6 @@ const CreatePostModal: FC<CreatePostModalProps> = ({
 	userData,
 	dispatch,
 }) => {
-	const router = useRouter();
 	const queryClient = useQueryClient();
 	const [postText, setPostText] = useState("");
 	const [selectedImage, setSelectedImage] = useState<{
@@ -57,6 +55,7 @@ const CreatePostModal: FC<CreatePostModalProps> = ({
 		},
 		{
 			onSuccess: () => {
+				console.log("Posted successfully!");
 				queryClient.invalidateQueries("posts");
 			},
 		}
@@ -136,7 +135,6 @@ const CreatePostModal: FC<CreatePostModalProps> = ({
 		try {
 			console.log("Posting...");
 			postUploadMutation.mutate(body);
-			console.log("Posted successfully!");
 			toggle();
 			dispatch({
 				type: FEED_ACTION.SET_SUCCESS_MESSAGE,

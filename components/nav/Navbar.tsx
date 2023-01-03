@@ -1,6 +1,6 @@
 import React, { FC, Fragment, useState } from "react";
-import { useRouter } from "next/router";
 import Link from "next/link";
+import { useRouter } from "next/router";
 import { signOut, useSession } from "next-auth/react";
 import { FaComment, FaSearch, FaSuitcase, FaUsers } from "react-icons/fa";
 import { Menu, Transition } from "@headlessui/react";
@@ -12,20 +12,22 @@ interface NavbarProps {
 
 const Navbar: FC<NavbarProps> = (props) => {
 	const router = useRouter();
-	const { data, status } = useSession();
+	const { data: sessionData, status: sessionStatus } = useSession();
 	const [searchInput, setSearchInput] = useState(props.searchitem ?? "");
 
 	return (
 		<nav className="w-full bg-slate-50 shadow-gray-300/50 shadow-md fixed py-1 px-4 z-10 flex justify-between items-center">
 			<div className="flex justify-start items-center gap-2">
 				<header className="flex py-1 justify-start cursor-pointer items-end">
-					<Link href={status === "authenticated" ? "/feed" : "/"}>
+					<Link
+						href={sessionStatus === "authenticated" ? "/feed" : "/"}
+					>
 						<h1 className="font-bold text-4xl text-black">Jobly</h1>
 					</Link>
 				</header>
 
 				{/* show search bar only if authenticated */}
-				{status === "authenticated" && (
+				{sessionStatus === "authenticated" && (
 					<form
 						autoCorrect="off"
 						autoCapitalize="off"
@@ -53,7 +55,9 @@ const Navbar: FC<NavbarProps> = (props) => {
 				<button
 					onClick={() => router.push("/jobs")}
 					className={`transition-all p-1 h-10 w-10 rounded-full bg-slate-200/70 focus:bg-slate-300/70 hover:bg-slate-300/70 duration-300 flex items-center justify-center ${
-						router.route === "/jobs" ? "bg-slate-300/70" : ""
+						router.route.startsWith("/jobs")
+							? "bg-slate-300/70"
+							: ""
 					}`}
 				>
 					<FaSuitcase />
@@ -61,7 +65,7 @@ const Navbar: FC<NavbarProps> = (props) => {
 			</div>
 
 			{/* SHOW USER IF USER IS AUTHENTICATED */}
-			{status === "authenticated" && (
+			{sessionStatus === "authenticated" && (
 				<div className="flex justify-end items-center gap-2">
 					<button
 						onClick={() => router.push("/direct")}
@@ -89,8 +93,8 @@ const Navbar: FC<NavbarProps> = (props) => {
 					<Menu>
 						<Menu.Button className="rounded-full overflow-clip aspect-square h-10 w-10">
 							<img
-								src={data?.user?.image ?? ""}
-								alt={data?.user?.name ?? ""}
+								src={sessionData?.user?.image ?? ""}
+								alt={sessionData?.user?.name ?? ""}
 								className="rounded-full"
 								onError={(e) => {
 									e.preventDefault();
@@ -124,11 +128,11 @@ const Navbar: FC<NavbarProps> = (props) => {
 														? "bg-violet-500 text-white"
 														: "text-gray-900"
 												} group flex gap-2 w-full items-center transition-all duration-300 rounded-md px-2 py-2 text-sm`}
-												href={`/user/${data?.user?.name}`}
+												href={`/user/${sessionData?.user?.name}`}
 											>
 												<HiAcademicCap className="w-5 h-5" />
 												<p className="font-bold">
-													{data.user?.name}
+													{sessionData.user?.name}
 												</p>
 											</a>
 										)}
@@ -136,17 +140,18 @@ const Navbar: FC<NavbarProps> = (props) => {
 
 									<Menu.Item>
 										{({ active }) => (
-											<a
-												className={`${
-													active
-														? "bg-violet-500 text-white"
-														: "text-gray-900"
-												} group flex gap-2 w-full items-center transition-all duration-300 rounded-md px-2 py-2 text-sm`}
-												href="/jobs/saved"
-											>
-												<HiBriefcase className="w-5 h-5" />
-												<p>Saved jobs</p>
-											</a>
+											<Link href="/jobs/saved">
+												<a
+													className={`${
+														active
+															? "bg-violet-500 text-white"
+															: "text-gray-900"
+													} group flex gap-2 w-full items-center transition-all duration-300 rounded-md px-2 py-2 text-sm`}
+												>
+													<HiBriefcase className="w-5 h-5" />
+													<p>Saved jobs</p>
+												</a>
+											</Link>
 										)}
 									</Menu.Item>
 
@@ -177,7 +182,7 @@ const Navbar: FC<NavbarProps> = (props) => {
 				</div>
 			)}
 
-			{status === "unauthenticated" && (
+			{sessionStatus === "unauthenticated" && (
 				<div className="flex justify-end items-center gap-5">
 					<button
 						onClick={() => router.push("/auth/signin")}

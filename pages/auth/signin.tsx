@@ -4,6 +4,7 @@ import { useRouter } from "next/router";
 import SignInWithGoogleButton from "../../components/auth/SignInWithGoogleButton";
 import { signIn, useSession } from "next-auth/react";
 import Head from "next/head";
+import Link from "next/link";
 
 const SignIn: NextPage = () => {
 	const router = useRouter();
@@ -117,12 +118,11 @@ const SignIn: NextPage = () => {
 							/>
 							<p className="text-sm italic mt-2">
 								Don't have an account?{" "}
-								<a
-									className="text-sky-400 hover:underline"
-									href="/auth"
-								>
-									Register
-								</a>
+								<Link href="/auth">
+									<a className="text-sky-400 hover:underline">
+										Register
+									</a>
+								</Link>
 							</p>
 						</div>
 					</form>

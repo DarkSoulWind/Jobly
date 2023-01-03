@@ -1,5 +1,5 @@
 import cheerio from "cheerio";
-import { Scraper, JobListing } from "./scraper";
+import { Scraper, JobListing, JobPreview } from "./scraper";
 
 export default class StudentJobScraper extends Scraper {
 	public constructor(
@@ -58,6 +58,18 @@ export default class StudentJobScraper extends Scraper {
 			this._results = results;
 
 			resolve();
+		});
+	}
+
+	public static async scrapePreview(link: string): Promise<JobPreview> {
+		return new Promise<JobPreview>(async (resolve, reject) => {
+			const response = await fetch(link);
+			if (!response.ok) reject();
+
+			const html = await response.text();
+			const $ = cheerio.load(html);
+
+			const description = $("div.job-opening__description").text();
 		});
 	}
 }

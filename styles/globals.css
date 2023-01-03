@@ -6,6 +6,16 @@
 	.background {
 		@apply w-screen h-screen bg-slate-200 fixed top-0 left-0 -z-50;
 	}
+
+	/* FOR MARKDOWN FORMATTED LINKS */
+	/* p > a {
+		@apply text-blue-600 hover:underline;
+	} */
+
+	/* FOR MARKDOWN FORMATTED IMAGES */
+	/* p > img {
+		@apply max-h-[4rem] max-w-[4rem];
+	} */
 }
 
 input[type="search"]::-webkit-search-cancel-button {

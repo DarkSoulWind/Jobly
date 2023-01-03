@@ -18,11 +18,17 @@
 		"paths": {
 			"@components/*": ["components/*"],
 			"@lib/*": ["lib/*"],
-			"@reducers/*": ["reducers/*"],
+			"@reducers/*": ["lib/reducers/*"],
 			"@public/*": ["public/*"],
-			"@hooks/*": ["hooks/*"]
+			"@hooks/*": ["lib/hooks/*"]
 		}
 	},
-	"include": ["next-env.d.ts", "**/*.ts", "**/*.tsx"],
+	"include": [
+		"next-env.d.ts",
+		"**/*.ts",
+		"**/*.tsx",
+		"tests/RSA.mts",
+		"tests/RSA.ts"
+	],
 	"exclude": ["node_modules"]
 }

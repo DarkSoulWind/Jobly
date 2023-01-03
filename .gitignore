@@ -37,6 +37,4 @@ yarn-error.log*
 
 test.*
 
-# js files
-/lib/*.js
-/tests/*.js
+countLines.sh

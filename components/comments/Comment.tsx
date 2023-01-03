@@ -1,13 +1,14 @@
 import { FC, Fragment, Dispatch, SetStateAction } from "react";
 import { Comment, Follow, UserPreference } from "@prisma/client";
 import { FaEllipsisH } from "react-icons/fa";
-import { useModal } from "@hooks/useModal";
+import { useModal } from "@lib/hooks/useModal";
 import Modal from "@components/modal/Modal";
 import { useRouter } from "next/router";
-import { useDate } from "@hooks/useDate";
+import { useDate } from "@lib/hooks/useDate";
 import { AnimatePresence } from "framer-motion";
 import { Menu, Transition } from "@headlessui/react";
 import { HiFlag, HiTrash } from "react-icons/hi";
+import Markdown from "@components/markdown/Markdown";
 
 interface CommentProps {
 	commentData: Comment & {
@@ -144,7 +145,9 @@ const Comment: FC<CommentProps> = ({
 				<h4 className="text-xs text-slate-600">
 					{commentData.user.preferences?.bio}
 				</h4>
-				<p className="mt-2">{commentData.commentText}</p>
+
+				{/* COMMENT TEXT */}
+				<Markdown className="mt-2">{commentData.commentText}</Markdown>
 			</div>
 			<div className="absolute top-1 right-3 flex justify-end items-center gap-1">
 				<p className="text-xs text-slate-600">{relativeDatePosted}</p>

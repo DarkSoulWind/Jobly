@@ -6,8 +6,8 @@ import {
 	User,
 	UserPreference,
 } from "@prisma/client";
-import { InferGetStaticPropsType } from "next";
-import { getStaticProps } from "pages/user/[username]";
+import { InferGetServerSidePropsType, InferGetStaticPropsType } from "next";
+import { getServerSideProps } from "pages/user/[username]";
 
 export interface UserProfile {
 	Comments: (Comment & {
@@ -28,7 +28,9 @@ export interface UserProfile {
 	posts: Post[];
 }
 
-export type ProfileState = InferGetStaticPropsType<typeof getStaticProps> & {
+export type ProfileState = InferGetServerSidePropsType<
+	typeof getServerSideProps
+> & {
 	isFollowing: boolean;
 	successMessage: string;
 };
@@ -86,6 +88,7 @@ export const profileReducer = (
 				phoneNumber:
 					action.payload.profileUpdate?.phoneNumber ??
 					state.phoneNumber,
+
 				preferences: {
 					...state.preferences,
 					...action.payload.profileUpdate,

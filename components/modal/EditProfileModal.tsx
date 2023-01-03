@@ -1,6 +1,10 @@
 import React, { Dispatch, FC, useState } from "react";
 import Modal from "@components/modal/Modal";
-import { Action, ProfileState, PROFILE_ACTION } from "@reducers/profileReducer";
+import {
+	Action,
+	ProfileState,
+	PROFILE_ACTION,
+} from "@lib/reducers/profileReducer";
 
 type EditProfileModalProps = {
 	modalOpen: boolean;

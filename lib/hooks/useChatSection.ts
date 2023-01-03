@@ -1,7 +1,7 @@
 import { Dispatch, RefObject, useEffect } from "react";
 import { encrypt } from "@lib/hash";
-import { ChatState, Action, Message } from "@reducers/chatReducer";
-import { CHAT_ACTION } from "actions/types/chat";
+import { ChatState, Action, Message } from "@lib/reducers/chatReducer";
+import { CHAT_ACTION } from "@lib/actions/types/chat";
 
 const useChatSection = (
 	chatState: ChatState,
@@ -10,29 +10,29 @@ const useChatSection = (
 ) => {
 	// GET INITIAL MESSAGES FOR THE CHAT
 	// RUNS EVERYTIME THE SELECTED CHAT ID CHANGES
-	useEffect(() => {
-		const getMessagesByChatID = async () => {
-			try {
-				const response = await fetch(
-					`http://localhost:3000/api/messages/${chatState.selectedChatID}`
-				);
-				const data: Message[] = await response.json();
+	// useEffect(() => {
+	// 	const getMessagesByChatID = async () => {
+	// 		try {
+	// 			const response = await fetch(
+	// 				`http://localhost:3000/api/messages/${chatState.selectedChatID}`
+	// 			);
+	// 			const data: Message[] = await response.json();
 
-				if (!response.ok)
-					throw new Error(JSON.stringify(data, null, 4));
+	// 			if (!response.ok)
+	// 				throw new Error(JSON.stringify(data, null, 4));
 
-				// if successful, set the messages to that
-				dispatch({
-					type: CHAT_ACTION.SET_MESSAGES,
-					payload: { messages: data },
-				});
-			} catch (error) {
-				console.error(error);
-			}
-		};
+	// 			// if successful, set the messages to that
+	// 			dispatch({
+	// 				type: CHAT_ACTION.SET_MESSAGES,
+	// 				payload: { messages: data },
+	// 			});
+	// 		} catch (error) {
+	// 			console.error(error);
+	// 		}
+	// 	};
 
-		getMessagesByChatID();
-	}, [chatState.selectedChatID]);
+	// 	getMessagesByChatID();
+	// }, [chatState.selectedChatID]);
 
 	// RUNS EVERYTIME THE CHAT IS CHANGED
 	useEffect(() => {

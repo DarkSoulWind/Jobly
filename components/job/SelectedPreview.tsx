@@ -1,23 +1,31 @@
 import { NextRouter } from "next/router";
-import React, {
-	DetailedHTMLProps,
-	FC,
-	HTMLAttributes,
-	useEffect,
-	useState,
-} from "react";
-import type { JobPreview, SiteType } from "@lib/scraper/scraper";
+import React, { FC, useCallback } from "react";
+import type { JobListing, JobPreview, SiteType } from "@lib/scraper/scraper";
 import SkeletonLoadingJobPreview from "@components/job/SkeletonLoadingJobPreview";
 import { FaHeart } from "react-icons/fa";
 import { useSession } from "next-auth/react";
-import { useMutation, useQuery, useQueryClient } from "react-query";
+import {
+	InfiniteData,
+	useMutation,
+	useQuery,
+	useQueryClient,
+} from "react-query";
 
-interface SelectedPreviewProps
-	extends DetailedHTMLProps<HTMLAttributes<HTMLDivElement>, HTMLDivElement> {
+interface SelectedPreviewProps {
 	link: string;
 	type: string;
 	isSaved: boolean;
+	isErrorJobData: boolean;
 	router: NextRouter;
+	jobData:
+		| InfiniteData<{
+				keyword: string;
+				location: string;
+				distance: string;
+				results: JobListing[];
+				nextCursor: number;
+		  }>
+		| undefined;
 }
 
 type SaveJobBody = {
@@ -32,14 +40,16 @@ type SaveJobBody = {
 
 const SelectedPreview: FC<SelectedPreviewProps> = ({
 	link,
-	router,
 	type,
 	isSaved,
+	isErrorJobData,
+	router,
+	jobData,
 }) => {
 	const { data: sessionData, status: sessionStatus } = useSession();
 	const queryClient = useQueryClient();
 
-	const saveJobMutation = useMutation(
+	const addSaveJobMutation = useMutation(
 		(bodyData: SaveJobBody) => {
 			return fetch("http://localhost:3000/api/jobs/save/add", {
 				method: "POST",
@@ -56,41 +66,80 @@ const SelectedPreview: FC<SelectedPreviewProps> = ({
 			},
 		}
 	);
-	// console.log("is saved:", isSaved);
-	const getPreviewjobs = async () => {
+
+	const removeSaveJobMutation = useMutation(
+		(body: { email: string; link: string }) => {
+			return fetch("http://localhost:3000/api/jobs/save/remove", {
+				method: "POST",
+				body: JSON.stringify(body),
+			});
+		},
+		{
+			onSuccess: () => {
+				console.log("Unsaved job");
+				queryClient.invalidateQueries("saved-jobs");
+			},
+			onError: () => {
+				console.error("Unable to remove from favourite jobs list");
+			},
+		}
+	);
+
+	const getPreviewjobs = useCallback(async () => {
 		const response = await fetch("http://localhost:3000/api/jobs/preview", {
 			method: "POST",
 			body: JSON.stringify({ link, type }),
 		});
 		const data: JobPreview = await response.json();
 		return data;
-	};
+	}, [link, type]);
 
-	const { data: jobPreviewData, isFetching: isFetchingJobPreview } = useQuery(
-		["job-preview", link, type],
-		getPreviewjobs,
-		{ refetchOnWindowFocus: false }
-	);
+	const {
+		data: jobPreviewData,
+		isFetching: isFetchingJobPreview,
+		isError,
+	} = useQuery(["job-preview", link, type], getPreviewjobs, {
+		refetchOnWindowFocus: false,
+		// enabled: !!jobData,
+	});
 
 	// need to save the job title, employer, location, description and date added
-	const saveJob = async () => {
+	const handleSaveJob = async () => {
 		if (sessionStatus === "unauthenticated") return router.push("/auth");
 
-		const bodyData = {
-			link,
-			type,
-			email: sessionData?.user?.email!,
-			title: jobPreviewData?.title!,
-			employer: jobPreviewData?.employer.name!,
-			location: jobPreviewData?.location!,
-			description: jobPreviewData?.description!,
-		};
+		if (!isSaved) {
+			const bodyData = {
+				link,
+				type,
+				email: sessionData?.user?.email!,
+				title: jobPreviewData?.title!,
+				employer: jobPreviewData?.employer.name!,
+				location: jobPreviewData?.location!,
+				description: jobPreviewData?.description!,
+			};
 
-		console.log("Saving job:", JSON.stringify(bodyData));
-		saveJobMutation.mutate(bodyData);
+			console.log("Saving job:", JSON.stringify(bodyData));
+			addSaveJobMutation.mutate(bodyData);
+		} else {
+			console.log("Job is already saved");
+			removeSaveJobMutation.mutate({
+				email: sessionData!.user!.email!,
+				link,
+			});
+		}
 	};
 
-	if (isFetchingJobPreview) return <SkeletonLoadingJobPreview />;
+	if (isFetchingJobPreview) {
+		return <SkeletonLoadingJobPreview />;
+	}
+
+	if (isError) {
+		return (
+			<div>
+				<div>Sorry bro</div>
+			</div>
+		);
+	}
 
 	return (
 		<aside className="top-[5rem] max-h-[90vh] w-full sticky p-5 border-[1px] max-w-[50rem] border-slate-300 bg-white rounded-lg">
@@ -114,13 +163,14 @@ const SelectedPreview: FC<SelectedPreviewProps> = ({
 					className="py-2 px-5 rounded-full bg-blue-500 hover:bg-blue-600 transition-all font-semibold text-white"
 					href={link}
 					target="_blank"
+					rel="noreferrer"
 				>
 					Apply on website
 				</a>
 
 				{/* SAVE JOB BUTTON */}
 				<button
-					onClick={saveJob}
+					onClick={handleSaveJob}
 					className={`py-2 px-5 rounded-full h-10 transition-all font-semibold text-white ${
 						isSaved
 							? "bg-white border-2 border-red-300 hover:bg-red-300"

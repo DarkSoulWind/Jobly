@@ -6,9 +6,11 @@ import { Scraper, JobListing, JobPreview, SiteType } from "./scraper";
 export default class ReedScraper extends Scraper {
 	public constructor(
 		public readonly keyword: string,
-		public readonly location: string
+		public readonly location: string,
+		public readonly jobTypes: string[]
 	) {
 		super(keyword, location);
+		console.log("SCANNING REED FOR JOBS WITH TYPE " + jobTypes);
 		this.URL = `https://www.reed.co.uk/jobs/${keyword
 			.split(" ")
 			.join("-")}-jobs-in-${location.split(" ").join("-")}`;
@@ -18,10 +20,11 @@ export default class ReedScraper extends Scraper {
 		return new Promise<void>(async (resolve, reject) => {
 			console.log(`Fetching ${this.URL}...`);
 			const response = await axios.get(this.URL);
-			if (response.status == 500) reject();
+			if (response.status == 500) reject("whoopsies");
 
 			console.log("Fetched successfully, awaiting text response...");
-			const html = await response.data;
+			// const html = await response.json();
+			const html = response.data;
 			console.log("Parsing html...");
 			const $ = cheerio.load(html);
 			console.log("HTML parsed successfully");

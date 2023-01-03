@@ -39,6 +39,8 @@ const JobListingComponent: FC<JobListingProps> = ({
 			<section className="mt-2">
 				<p className="text-sm">{job.description}</p>
 			</section>
+
+			<a href={job.link}>link</a>
 		</article>
 	);
 };

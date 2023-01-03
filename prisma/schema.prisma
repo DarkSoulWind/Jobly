@@ -68,7 +68,7 @@ model VerificationToken {
 }
 
 model UserPreference {
-  userID        String  @unique
+  userID        String  @unique @id
   firstName     String?
   lastName      String?
   pronouns      String?
@@ -97,8 +97,8 @@ model Post {
 model PostLike {
   userID String
   postID String
-  post   Post   @relation(fields: [postID], references: [id], onDelete: Cascade)
   user   User   @relation(fields: [userID], references: [id], onDelete: Cascade)
+  post   Post   @relation(fields: [postID], references: [id], onDelete: Cascade)
 
   @@id([userID, postID])
 }
@@ -110,8 +110,8 @@ model Interest {
 
 model UserInterest {
   userID   String
-  user     User     @relation(fields: [userID], references: [id], onDelete: Cascade)
   name     String
+  user     User     @relation(fields: [userID], references: [id], onDelete: Cascade)
   interest Interest @relation(fields: [name], references: [name], onDelete: Cascade)
 
   @@id([userID, name])
@@ -190,4 +190,12 @@ model SavedJob {
   user        User     @relation("user", fields: [userID], references: [id], onDelete: Cascade)
 
   @@id([userID, link])
+}
+
+// TODO: add image file size and name functionality
+model Image {
+  imageRef String @id
+  image String
+  name String
+  size Int
 }

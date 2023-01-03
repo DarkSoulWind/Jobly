@@ -1,7 +1,11 @@
 import React, { Dispatch, FC } from "react";
 import Modal from "@components/modal/Modal";
 import { FaEnvelope, FaPhone } from "react-icons/fa";
-import { ProfileState, Action, PROFILE_ACTION } from "@reducers/profileReducer";
+import {
+	ProfileState,
+	Action,
+	PROFILE_ACTION,
+} from "@lib/reducers/profileReducer";
 
 interface ContactDetailModalProps {
 	modalOpen: boolean;

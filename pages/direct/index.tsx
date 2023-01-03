@@ -1,17 +1,21 @@
 "DIRECT MESSAGES PAGE";
 
-import React, { useEffect, useReducer } from "react";
+import React, { useEffect, useReducer, useState } from "react";
 import { NextPage } from "next";
 import Head from "next/head";
-import Link from "next/link"
+import Link from "next/link";
 import { useRouter } from "next/router";
 import { FaPaperPlane, FaPenSquare } from "react-icons/fa";
 import { useSession } from "next-auth/react";
 import io from "socket.io-client";
 import { useQuery } from "react-query";
 import ChatSection from "@components/chat/ChatSection";
-import { ChatState, chatReducer, FollowResponse } from "@reducers/chatReducer";
-import { useModal } from "@hooks/useModal";
+import {
+	ChatState,
+	chatReducer,
+	FollowResponse,
+} from "@lib/reducers/chatReducer";
+import { useModal } from "@lib/hooks/useModal";
 import Modal from "@components/modal/Modal";
 import Navbar from "@components/nav/Navbar";
 import { AnimatePresence } from "framer-motion";
@@ -22,98 +26,112 @@ import {
 	setOnlineStatus,
 	setSocket,
 	setYourUsername,
-} from "../../actions";
-import { Chats, AllFollows } from "../../actions/types/chat";
+} from "../../lib/actions";
+import { Chats, AllFollows } from "../../lib/actions/types/chat";
+import { Chat, Participant } from "@prisma/client";
+import Alert from "@components/alert/Alert";
 
 // GLOBAL STATE FOR THIS PAGE
-const initialChatState: ChatState = {
-	selectedChatID: "",
-	selectedUsername: "",
-	yourUsername: "",
-	chats: null,
-	socket: null,
-	messages: [],
-	follows: null,
+const initChatState = (selectedChatID: string): ChatState => {
+	return {
+		selectedChatID,
+		selectedUsername: "",
+		yourUsername: "",
+		chats: null,
+		socket: null,
+		messages: [],
+		follows: null,
+	};
+};
+
+const fetchChats = async (email: string) => {
+	const response = await fetch(
+		`http://localhost:3000/api/chats/email/${email}`
+	);
+	const responseData: Chats = await response.json();
+
+	if (!response.ok) {
+		throw new Error(JSON.stringify(responseData, null, 4));
+	}
+	return responseData;
+};
+
+const fetchFollows = async (email: string) => {
+	const response = await fetch(`http://localhost:3000/api/follows/${email}`);
+	const responseData: FollowResponse = await response.json();
+
+	if (!response.ok) {
+		throw new Error(JSON.stringify(responseData, null, 4));
+	}
+
+	const follows = [
+		...(responseData?.followers.map(
+			(follow) => follow.follower
+		) as AllFollows),
+		...(responseData?.following.map(
+			(follow) => follow.following
+		) as AllFollows),
+	];
+
+	return follows;
 };
 
 const DirectMessagesPage: NextPage = () => {
 	const router = useRouter();
-	const { data } = useSession();
-	const [chatState, dispatch] = useReducer(chatReducer, initialChatState);
+	const { data: sessionData } = useSession();
+	const [chatState, dispatch] = useReducer(
+		chatReducer,
+		(router.query.chat as string) || "",
+		initChatState
+	);
 	const [newChatOpen, setNewChatOpen, toggleNewChatOpen] = useModal(false);
-
-	const getChatsByEmail = async () => {
-		const response = await fetch(
-			`http://localhost:3000/api/chats/email/${data?.user?.email}`
-		);
-		const responseData: Chats = await response.json();
-
-		if (!response.ok) {
-			throw new Error(JSON.stringify(responseData, null, 4));
-		}
-
-		// if the page has a chat query then select that chat id
-		if (router.query.chat !== "") {
-			dispatch(
-				selectChatID({
-					chatID: router.query.chat as string,
-					yourUsername: data?.user?.name as string,
-				})
-			);
-		}
-
-		// set the chats to the response data if successful and set the username
-		dispatch(setChats({ chats: responseData }));
-		dispatch(
-			setYourUsername({
-				yourUsername: data?.user?.name as string,
-			})
-		);
-		return responseData;
-	};
+	const [messageError, setMessageError] = useState("");
 
 	const {
 		isLoading: chatFetchLoading,
 		isError: chatFetchError,
 		data: chatData,
-	} = useQuery("fetchChats", getChatsByEmail);
+	} = useQuery("chats", () => fetchChats(sessionData?.user?.email!), {
+		onSuccess(responseData) {
+			if (router.query.chat !== "") {
+				dispatch(
+					selectChatID({
+						chatID: router.query.chat as string,
+						yourUsername: sessionData?.user?.name as string,
+					})
+				);
+			}
+
+			// set the chats to the response data if successful and set the username
+			dispatch(setChats({ chats: responseData }));
+			dispatch(
+				setYourUsername({
+					yourUsername: sessionData?.user?.name as string,
+				})
+			);
+		},
+	});
+
+	const { data: followsData } = useQuery(
+		"follows",
+		() => fetchFollows(sessionData?.user?.email!),
+		{
+			onSuccess(responseData) {
+				dispatch(setFollows({ follows: responseData }));
+			},
+		}
+	);
 
 	// RUNS ONCE WHEN THE PAGE LOADS
-	// retrieves all chats that the user has participants in
+	// sets up the socket connection
 	useEffect(() => {
-		// gets data for user followers and following
-		const getFollows = async () => {
-			await fetch(
-				`http://localhost:3000/api/follows/${data?.user?.email}`
-			)
-				.then(async (response) => {
-					return await response.json();
-				})
-				.then((data: FollowResponse) => {
-					const follows = [
-						...(data?.followers.map(
-							(follow) => follow.follower
-						) as AllFollows),
-						...(data?.following.map(
-							(follow) => follow.following
-						) as AllFollows),
-					];
-					dispatch(setFollows({ follows }));
-				})
-				.catch((error) => {
-					console.error(error);
-				});
-		};
-
-		getFollows();
-
 		// setup a new socket connection and set that as the socket
 		const newSocket = io("http://localhost:4000");
 		dispatch(setSocket({ socket: newSocket }));
 
 		// update online status when connected
 		newSocket.emit("connected", {
-			email: data?.user?.email,
+			email: sessionData?.user?.email,
 			socketID: newSocket.id,
 		});
 
@@ -136,10 +154,36 @@ const DirectMessagesPage: NextPage = () => {
 
 		// cleanup function to disconnect the new socket connection
 		return () => {
-			newSocket.emit("disconnecting chat", data?.user?.email);
+			newSocket.emit("disconnecting chat", sessionData?.user?.email);
 			newSocket.disconnect();
 		};
 	}, []);
+
+	const handleChatClicked = (
+		chat: Chat & {
+			participants: (Participant & {
+				user: {
+					image: string | null;
+					name: string;
+					online: boolean;
+				};
+			})[];
+		}
+	) => {
+		dispatch(
+			selectChatID({
+				chatID: chat.id,
+				yourUsername: sessionData?.user?.name as string,
+			})
+		);
+		router.push({
+			pathname: "/direct",
+			query: {
+				chat: chat.id,
+			},
+		});
+		chatState.socket?.emit("join chat", chat.id);
+	};
 
 	return (
 		<>
@@ -182,30 +226,14 @@ const DirectMessagesPage: NextPage = () => {
 									const guy = chat.participants?.find(
 										(participant) =>
 											participant.user.name !==
-											data?.user?.name
+											sessionData?.user?.name
 									);
 									return (
 										<div
 											key={chat.id}
 											// SWITCHING CHATS
 											onClick={() => {
-												dispatch(
-													selectChatID({
-														chatID: chat.id,
-														yourUsername: data?.user
-															?.name as string,
-													})
-												);
-												router.push({
-													pathname: "/direct",
-													query: {
-														chat: chat.id,
-													},
-												});
-												chatState.socket?.emit(
-													"join chat",
-													chat.id
-												);
+												handleChatClicked(chat);
 											}}
 											className={`w-full flex justify-start hover:bg-indigo-100 transition-all cursor-pointer items-center gap-3 py-2 px-3 ${
 												guy?.chatID ===
@@ -260,7 +288,7 @@ const DirectMessagesPage: NextPage = () => {
 					<div className="flex flex-col w-full h-full">
 						{/* USERNAME BAR */}
 						<div className="w-full p-3 border-b-[1px] border-slate-300 bg-indigo-400">
-							{chatState.selectedUsername === "" ? (
+							{!chatState.selectedUsername ? (
 								<h2 className="font-bold text-2xl">
 									Chat not selected
 								</h2>
@@ -293,6 +321,7 @@ const DirectMessagesPage: NextPage = () => {
 								<ChatSection
 									chatState={chatState}
 									dispatch={dispatch}
+									setMessageError={setMessageError}
 								/>
 							</div>
 						)}
@@ -305,6 +334,14 @@ const DirectMessagesPage: NextPage = () => {
 				mode="wait"
 				onExitComplete={() => null}
 			>
+				{messageError !== "" && (
+					<Alert
+						level="Error"
+						message={messageError}
+						open={messageError.length > 0}
+						closeAction={() => setMessageError("")}
+					/>
+				)}
 				{newChatOpen && (
 					<Modal
 						open={newChatOpen}
@@ -319,8 +356,8 @@ const DirectMessagesPage: NextPage = () => {
 
 							{/* RECOMMEND FOLLOWS */}
 							<form>
-								{chatState.follows?.map((follow, index) => (
-									<div key={index}>
+								{followsData?.map((follow, index) => (
+									<div key={follow.id}>
 										<div className="w-full flex hover:bg-slate-100 cursor-pointer justify-between items-center px-3 py-2">
 											<div className="flex items-center gap-2">
 												<img

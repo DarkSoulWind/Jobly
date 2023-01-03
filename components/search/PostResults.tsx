@@ -18,10 +18,10 @@ const PostResults: FC<PostResultsProps> = ({ router, results: { posts } }) => {
 			{posts.map((post, index) => (
 				<button
 					key={index}
-					onClick={() => router.push(`/post/${post.PostID}`)}
+					onClick={() => router.push(`/post/${post.id}`)}
 					className="w-full flex items-start gap-3"
 				>
-					{post.PostText}
+					{post.postText}
 				</button>
 			))}
 			{posts.length === 0 && (

@@ -1,24 +1,70 @@
-import React, { FC, FormEvent, useState, useRef, Dispatch } from "react";
+import React, {
+	FC,
+	FormEvent,
+	useState,
+	useRef,
+	Dispatch,
+	Fragment,
+	SetStateAction,
+} from "react";
 import MessageComponent from "./Message";
-import { ChatState, Action } from "@reducers/chatReducer";
+import { ChatState, Action, Message } from "@lib/reducers/chatReducer";
 import { useRouter } from "next/router";
-import useChatSection from "@hooks/useChatSection";
+import useChatSection from "@lib/hooks/useChatSection";
+import { useQuery } from "react-query";
+import { CHAT_ACTION } from "@lib/actions/types/chat";
+import { z } from "zod";
+
+const TextBody = z.string({ required_error: "Text body is empty." }).max(280, {
+	message: "Message is too long, must be 280 characters or less.",
+});
 
 interface ChatSectionProps {
 	chatState: ChatState;
 	dispatch: Dispatch<Action>;
+	setMessageError: Dispatch<SetStateAction<string>>;
 }
 
-// HOLDS ALL THE MESSAGES
-const ChatSection: FC<ChatSectionProps> = ({ chatState, dispatch }) => {
+const fetchMessages = async (chatID: string) => {
+	const response = await fetch(
+		`http://localhost:3000/api/messages/${chatID}`
+	);
+	const responseData: Message[] = await response.json();
+
+	if (!response.ok) throw new Error(JSON.stringify(responseData, null, 4));
+
+	return responseData;
+};
+
+/* This is the main chat section. It holds all the messages and the input box to send messages. */
+const ChatSection: FC<ChatSectionProps> = ({
+	chatState,
+	dispatch,
+	setMessageError,
+}) => {
 	const router = useRouter();
 	const [textInput, setTextInput] = useState("");
 	const scrollDummy = useRef<HTMLDivElement>(null);
 
+	const { isFetching: isFetchingMessages } = useQuery(
+		["chat-messages", chatState.selectedChatID],
+		() => fetchMessages(chatState.selectedChatID),
+		{
+			refetchOnWindowFocus: false,
+			onSuccess(responseData) {
+				dispatch({
+					type: CHAT_ACTION.SET_MESSAGES,
+					payload: { messages: responseData },
+				});
+			},
+		}
+	);
+
 	// Check to see if you are part of the chat
 	// if not, redirect to 404 page
 	if (
-		!chatState.chats?.find((chat) => chat.id === chatState.selectedChatID)
+		chatState.chats &&
+		!chatState.chats.find((chat) => chat.id === chatState.selectedChatID)
 	) {
 		router.push("/404");
 	}
@@ -29,6 +75,16 @@ const ChatSection: FC<ChatSectionProps> = ({ chatState, dispatch }) => {
 	const sendMessage = (e: FormEvent<HTMLFormElement>) => {
 		e.preventDefault();
 		if (textInput.trim() === "") return;
+		const validResults = TextBody.safeParse(textInput);
+		console.log("VALIDATION RESULTS", validResults);
+
+		if (!validResults.success) {
+			const formatted = validResults.error.format();
+			console.log(formatted);
+			// TODO: SET ERROR - DONE
+			setMessageError(formatted._errors.join(", "));
+			return;
+		}
 
 		const messageData = {
 			senderUsername: chatState.yourUsername,
@@ -48,9 +104,9 @@ const ChatSection: FC<ChatSectionProps> = ({ chatState, dispatch }) => {
 
 					{/* ALL THE MESSAGES */}
 					<div className="flex flex-col gap-2">
-						{chatState.messages.map((message, index) => {
+						{chatState.messages?.map((message, index) => {
 							return (
-								<>
+								<Fragment key={message.id}>
 									{/* check if the dates are different, and separate them messages if they are */}
 									{new Date(message.datePosted).getDate() !==
 										new Date(
@@ -94,7 +150,7 @@ const ChatSection: FC<ChatSectionProps> = ({ chatState, dispatch }) => {
 										pfp={message.sender.image as string}
 										datePosted={message.datePosted}
 									/>
-								</>
+								</Fragment>
 							);
 						})}
 					</div>

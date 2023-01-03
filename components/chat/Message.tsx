@@ -1,8 +1,9 @@
 import React, { FC, Fragment } from "react";
-import { FaEllipsisH } from "react-icons/fa";
-import { ChatState } from "@reducers/chatReducer";
+import { ChatState } from "@lib/reducers/chatReducer";
 import { Menu, Transition } from "@headlessui/react";
+import { FaEllipsisH } from "react-icons/fa";
 import { HiFlag, HiTrash } from "react-icons/hi";
+import Markdown from "@components/markdown/Markdown";
 
 interface MessageProps {
 	// IF YOU ARE THE ONE RECEIVING THE MESSAGE
@@ -14,7 +15,7 @@ interface MessageProps {
 	id: string;
 	message: string;
 	pfp: string;
-	datePosted: Date;
+	datePosted: string;
 }
 
 const Message: FC<MessageProps> = (props) => {
@@ -55,13 +56,13 @@ const Message: FC<MessageProps> = (props) => {
 					props.receiver ? "flex-row-reverse" : ""
 				} gap-2`}
 			>
-				<div
+				<Markdown
 					className={`${
 						props.receiver ? "bg-slate-200" : ""
 					} px-4 py-3 max-w-[20rem] rounded-[1.5rem] overflow-hidden text-sm whitespace-normal overflow-ellipsis border-[1px] border-slate-200`}
 				>
-					<p>{props.message}</p>
-				</div>
+					{props.message}
+				</Markdown>
 
 				<div className="group-hover:block hidden relative">
 					<MessageOptions
@@ -155,31 +156,6 @@ const MessageOptions: FC<MessageOptionsProps> = (props) => {
 				</Menu.Items>
 			</Transition>
 		</Menu>
-
-		// <button className="group relative ">
-		// 	<div
-		// 		className={`absolute -top-10 ${
-		// 			props.receiver ? "right-0" : "left-0"
-		// 		} group-focus-within:block hidden shadow-xl rounded-xl overflow-clip shadow-black"`}
-		// 	>
-		// 		<div className="flex justify-center items-center text-white font-bold gap-2 bg-indigo-800 py-2 px-4 text-sm">
-		// {/* DELETE MESSAGE */}
-		// {props.receiver && <p onClick={props.unsend}>Unsend</p>}
-
-		// {/* COPY MESSAGE */}
-		// 			<p
-		// 				onClick={() =>
-		// 					navigator.clipboard.writeText(props.message ?? "")
-		// 				}
-		// 			>
-		// 				Copy
-		// 			</p>
-
-		// 			{/* REPORT MESSAGE (doesnt do anything yet) */}
-		// 			{!props.receiver && <p>Report</p>}
-		// 		</div>
-		// 	</div>
-		// </button>
 	);
 };
 

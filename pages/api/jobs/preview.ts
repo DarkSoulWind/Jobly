@@ -27,7 +27,7 @@ export default async function handler(
 	}
 }
 
-async function getResults(type: string, link: string) {
+async function getResults(type: SiteType, link: string) {
 	switch (type) {
 		case "Reed":
 			const results = await ReedScraper.scrapePreview(link);

@@ -29,7 +29,7 @@ export type Message = {
 	};
 	chatID: string;
 	senderID: string;
-	datePosted: Date;
+	datePosted: string;
 	received: boolean;
 	cipher: {
 		key: string;

@@ -10,13 +10,26 @@ export default async function handler(
 		return;
 	}
 
-	const { SavedJobID } = JSON.parse(req.body) as {
-		SavedJobID: string;
+	const { email, link } = JSON.parse(req.body) as {
+		email: string;
+		link: string;
 	};
+
+	const user = await prisma.user.findFirst({
+		where: {
+			email,
+		},
+		select: {
+			id: true,
+		},
+	});
 
 	const result = await prisma.savedJob.delete({
 		where: {
-			id: SavedJobID,
+			userID_link: {
+				userID: user!.id,
+				link,
+			},
 		},
 	});
 	res.status(200).json(result);

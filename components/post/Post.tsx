@@ -10,17 +10,18 @@ import React, {
 import { FaComment, FaEllipsisH, FaShare, FaThumbsUp } from "react-icons/fa";
 import { Post, User, PostLike, UserPreference, Comment } from "@prisma/client";
 import Modal from "@components/modal/Modal";
-import { useModal } from "@hooks/useModal";
+import { useModal } from "@lib/hooks/useModal";
 import { useRouter } from "next/router";
-import { useDate } from "@hooks/useDate";
+import { useDate } from "@lib/hooks/useDate";
 import { deleteObject, ref } from "firebase/storage";
 import { storage } from "../../firebase-config";
-import { Action as FeedAction, FEED_ACTION } from "@reducers/feedReducer";
+import { Action as FeedAction, FEED_ACTION } from "@lib/reducers/feedReducer";
 import { AnimatePresence } from "framer-motion";
 import { Menu, Transition } from "@headlessui/react";
 import { HiFlag, HiTrash } from "react-icons/hi";
 import { useMutation, useQueryClient } from "react-query";
-import usePostLiked from "@hooks/usePostLiked";
+import usePostLiked from "@lib/hooks/usePostLiked";
+import Markdown from "@components/markdown/Markdown";
 
 type PostWithLikesAndUser =
 	| Post & {
@@ -285,7 +286,8 @@ const Post: FC<PostProps> = ({
 					)}
 				</div>
 
-				<p className="mt-2">{postData?.postText}</p>
+				{/* POST TEXT */}
+				<Markdown className="mt-2">{postData.postText}</Markdown>
 			</div>
 
 			{/* POST IMAGE */}

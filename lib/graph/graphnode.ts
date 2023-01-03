@@ -73,7 +73,7 @@ export function getWeightForID<T extends { [key: string]: any; id: string }>(
  * @param start - The starting node
  * @returns The shortest distance from the start node to every other node in the graph.
  */
-export function dijkstra<T extends { [key: string]: any; id: string }>(
+export function dijkstra<T extends { id: string }>(
 	nodes: GraphNode<T>[],
 	start: GraphNode<T>
 ) {

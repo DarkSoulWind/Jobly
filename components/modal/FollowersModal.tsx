@@ -1,5 +1,5 @@
 import React, { FC } from "react";
-import { ProfileState } from "../../reducers/profileReducer";
+import { ProfileState } from "../../lib/reducers/profileReducer";
 import Modal from "./Modal";
 
 interface FollowersModalProps {

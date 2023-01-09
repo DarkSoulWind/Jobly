@@ -9,6 +9,7 @@ import JobListingComponent from "@components/job/JobListing";
 import SelectedPreview from "@components/job/SelectedPreview";
 import { SiteType } from "@lib/scraper";
 import { useRouter } from "next/router";
+import { PRODUCTION_URL } from "@lib/url";
 
 const SavedJobsPage: NextPage = () => {
 	const router = useRouter();
@@ -16,7 +17,7 @@ const SavedJobsPage: NextPage = () => {
 
 	const fetchSavedJobs = async () => {
 		const response = await fetch(
-			`http://localhost:3000/api/jobs/save/${sessionData?.user?.email!}`
+			`${PRODUCTION_URL}/api/jobs/save/${sessionData?.user?.email!}`
 		);
 		const responseData: SavedJob[] = await response.json();
 		return responseData;

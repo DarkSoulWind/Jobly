@@ -9,6 +9,7 @@ import { AnimatePresence } from "framer-motion";
 import { Menu, Transition } from "@headlessui/react";
 import { HiFlag, HiTrash } from "react-icons/hi";
 import Markdown from "@components/markdown/Markdown";
+import { PRODUCTION_URL } from "@lib/url";
 
 interface CommentProps {
 	commentData: Comment & {
@@ -69,7 +70,7 @@ const Comment: FC<CommentProps> = ({
 		try {
 			console.log("Deleting comment...");
 			const response = await fetch(
-				`http://localhost:3000/api/comments/delete`,
+				`${PRODUCTION_URL}/api/comments/delete`,
 				{
 					method: "POST",
 					body: JSON.stringify({ id }),

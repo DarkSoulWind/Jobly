@@ -1,29 +1,31 @@
-import type { NextPage } from "next";
+"HOME PAGE";
+
 import { useRef, FormEvent } from "react";
+import type { NextPage } from "next";
 import { useRouter } from "next/router";
+import Image from "next/image";
 import Head from "next/head";
+import { useSession } from "next-auth/react";
 import Footer from "@components/footer/Footer";
 import Navbar from "@components/nav/Navbar";
 import HomeBackground from "../public/images/HomeBackground.jpeg";
-import Image from "next/image";
 import { FaSearch } from "react-icons/fa";
-import { useSession } from "next-auth/react";
 
 const Home: NextPage = () => {
 	const router = useRouter();
-	const { status } = useSession();
+	const { status: sessionStatus } = useSession();
 	const searchRef = useRef<HTMLInputElement>(null);
+
+	if (sessionStatus === "authenticated") {
+		router.push("/feed");
+	}
 
 	const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
 		e.preventDefault();
-		const searchQuery = searchRef.current?.value.split(" ").join("+");
-		const URL = `/jobs?search=${searchQuery}`;
+		const searchQuery = searchRef.current?.value;
+		const URL = `/jobs/search/${searchQuery}`;
 		router.push(URL);
 	};
-
-	if (status === "authenticated") {
-		router.push("/feed");
-	}
 
 	return (
 		<>
@@ -46,7 +48,7 @@ const Home: NextPage = () => {
 						<Image
 							className="absolute h-full w-full"
 							src={HomeBackground}
-							alt="job-bg"
+							alt="homepage background image"
 							layout="fill"
 						/>
 
@@ -64,7 +66,7 @@ const Home: NextPage = () => {
 
 								<form
 									onSubmit={handleSubmit}
-									className="flex w-[50rem] mt-4 py-6 px-7 items-center gap-5 bg-slate-200/30 rounded-full backdrop-blur-sm"
+									className="flex w-[50rem]  mt-4 py-6 px-7 items-center gap-5 bg-slate-200/30 rounded-full backdrop-blur-sm"
 								>
 									<input
 										className="w-full rounded-md placeholder:text-gray-300 text-white bg-transparent outline-none"

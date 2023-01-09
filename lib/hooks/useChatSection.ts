@@ -14,7 +14,7 @@ const useChatSection = (
 	// 	const getMessagesByChatID = async () => {
 	// 		try {
 	// 			const response = await fetch(
-	// 				`http://localhost:3000/api/messages/${chatState.selectedChatID}`
+	// 				`${PRODUCTION_URL}/api/messages/${chatState.selectedChatID}`
 	// 			);
 	// 			const data: Message[] = await response.json();
 

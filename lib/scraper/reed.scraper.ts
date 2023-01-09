@@ -33,6 +33,7 @@ export default class ReedScraper extends Scraper {
 			$("article.job-result-card", html).each(function (
 				this: cheerio.Element
 			) {
+				// link to apply to the job
 				const link = $(this).find("a").attr("href") ?? "n/a";
 				const title = $(this)
 					.find("h2.job-result-heading__title")
@@ -73,6 +74,10 @@ export default class ReedScraper extends Scraper {
 
 	public static async scrapePreview(link: string): Promise<JobPreview> {
 		return new Promise<JobPreview>(async (resolve, reject) => {
+			console.log(
+				"🚀 ~ file: reed.scraper.ts:76 ~ ReedScraper ~ scrapePreview ~ link",
+				link
+			);
 			const response = await fetch(link);
 			if (!response.ok) reject();
 
@@ -84,7 +89,7 @@ export default class ReedScraper extends Scraper {
 			const title = $("meta[itemprop='title']").attr(
 				"content"
 			) as SiteType;
-			const employer = $("span[itemprop='name']").text();
+			const employerName = $("span[itemprop='name']").text();
 			const employerLogo = $("meta[itemprop='logo']").attr(
 				"content"
 			) as string;
@@ -110,7 +115,7 @@ export default class ReedScraper extends Scraper {
 				location,
 				employmentType,
 				description,
-				employer: { name: employer, logo: employerLogo },
+				employer: { name: employerName, logo: employerLogo },
 			});
 		});
 	}

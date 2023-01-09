@@ -1,13 +1,21 @@
-import NextAuth from "next-auth";
+import NextAuth, { NextAuthOptions, Session } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { PrismaAdapter } from "@next-auth/prisma-adapter";
-import { Session } from "next-auth";
 import { prisma } from "@lib/prisma";
+import axios, { AxiosResponse } from "axios";
 import { JWT } from "next-auth/jwt";
+import { PRODUCTION_URL } from "@lib/url";
 
-export default NextAuth({
+const options: NextAuthOptions = {
 	adapter: PrismaAdapter(prisma),
+	pages: {
+		// signIn: `${PRODUCTION_URL}/auth/signin`,
+		signIn: `/auth/signin`,
+	},
+	session: {
+		strategy: "jwt",
+	},
 	providers: [
 		GoogleProvider({
 			clientId: process.env.GOOGLE_CLIENT_ID as string,
@@ -17,28 +25,47 @@ export default NextAuth({
 			name: "Credentials",
 			credentials: {
 				email: {
-					label: "Email",
+					label: "Email address",
 					type: "email",
 					placeholder: "samsoong@gmail.com",
 				},
 				password: { label: "Password", type: "password" },
 			},
 			authorize: async (credentials, req) => {
-				const res = await fetch(
-					"http://localhost:3000/api/user/signin",
-					{
-						method: "POST",
-						body: JSON.stringify(credentials),
-						headers: { "Content-Type": "application/json" },
-					}
-				);
-				const user = await res.json();
+				type APIResponse = {
+					image: string | null;
+					name: string;
+					email: string | null;
+					password: string | null;
+					id: string;
+				};
 
-				if (res.ok && user) return user;
+				const res = await axios
+					.post<any, AxiosResponse<APIResponse, Error>>(
+						`${PRODUCTION_URL}/api/user/signin`,
+						{
+							...credentials,
+						}
+					)
+					.then((response) => {
+						const user = response.data;
 
-				// login failed
-				console.error("Login failed");
-				return null;
+						if (response.status === 200 && user) {
+							console.log(
+								"🚀 ~ file: [...nextauth].tsx:38 ~ authorize: ~ user",
+								user
+							);
+							console.log("ok signing in then");
+							return user;
+						}
+					})
+					.catch((error) => {
+						// login failed
+						console.error("Login failed");
+						return null;
+					});
+
+				return res as APIResponse | null;
 			},
 		}),
 	],
@@ -47,22 +74,15 @@ export default NextAuth({
 			if (user) {
 				token.id = user.id;
 			}
-
 			return token;
 		},
 		session: ({ session, token }: { session: Session; token: JWT }) => {
 			if (token) {
 				session.id = token.id;
 			}
-
 			return session;
 		},
 	},
-	secret: "test",
-	pages: {
-		signIn: "/auth/signin",
-	},
-	jwt: {
-		secret: "test",
-	},
-});
+	secret: "am gei",
+};
+export default NextAuth(options);

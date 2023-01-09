@@ -1,5 +1,5 @@
 // Which site the data is coming from.
-export type SiteType = "Reed" | "StudentJob";
+export type SiteType = "Reed" | "StudentJob" | "Totaljobs";
 
 export interface JobListing {
 	title: string;
@@ -24,10 +24,6 @@ export abstract class Scraper {
 	protected URL: string;
 	protected _results: JobListing[] = [];
 
-	get results() {
-		return this._results;
-	}
-
 	public constructor(
 		public readonly keyword: string,
 		public readonly location: string
@@ -35,7 +31,9 @@ export abstract class Scraper {
 		this.URL = "";
 	}
 
-	public async scrape(): Promise<void> {
-		return new Promise<void>((resolve, reject) => {});
+	get results() {
+		return this._results;
 	}
+
+	public abstract scrape(): Promise<void>;
 }

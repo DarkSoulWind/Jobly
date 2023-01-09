@@ -14,6 +14,7 @@ import useChatSection from "@lib/hooks/useChatSection";
 import { useQuery } from "react-query";
 import { CHAT_ACTION } from "@lib/actions/types/chat";
 import { z } from "zod";
+import { PRODUCTION_URL } from "@lib/url";
 
 const TextBody = z.string({ required_error: "Text body is empty." }).max(280, {
 	message: "Message is too long, must be 280 characters or less.",
@@ -26,9 +27,7 @@ interface ChatSectionProps {
 }
 
 const fetchMessages = async (chatID: string) => {
-	const response = await fetch(
-		`http://localhost:3000/api/messages/${chatID}`
-	);
+	const response = await fetch(`${PRODUCTION_URL}/api/messages/${chatID}`);
 	const responseData: Message[] = await response.json();
 
 	if (!response.ok) throw new Error(JSON.stringify(responseData, null, 4));

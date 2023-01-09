@@ -1,6 +1,11 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import type { JobListing } from "@lib/scraper";
-import { ReedScraper, StudentJobScraper } from "@lib/scraper";
+import {
+	ReedScraper,
+	StudentJobScraper,
+	JobsiteScraper,
+	TotaljobsScraper,
+} from "@lib/scraper";
 
 interface Results {
 	keyword: string;
@@ -35,12 +40,22 @@ export default async function handler(
 	try {
 		const reedResults = new ReedScraper(search, location, jobTypes);
 		await reedResults.scrape();
-		const studentJobResults = new StudentJobScraper(search, location);
-		await studentJobResults.scrape();
+		// const studentJobResults = new StudentJobScraper(search, location);
+		// await studentJobResults.scrape();
+		// const jobsiteResults = new JobsiteScraper(search, location, jobTypes);
+		// await jobsiteResults.scrape();
+		const totaljobsResults = new TotaljobsScraper(
+			search,
+			location,
+			jobTypes
+		);
+		await totaljobsResults.scrape();
 		const jobResults = [
 			...reedResults.results,
-			...studentJobResults.results,
+			...totaljobsResults.results,
 		];
+		// const jobResults = [...totaljobsResults.results];
+
 		const nextCursor =
 			parseInt(cursor) < jobResults.length
 				? 10 + parseInt(cursor)

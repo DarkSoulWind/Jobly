@@ -9,6 +9,7 @@ import { v4 as uuid } from "uuid";
 import { storage } from "../../firebase-config";
 import { z } from "zod";
 import { useMutation, useQueryClient } from "react-query";
+import { PRODUCTION_URL } from "@lib/url";
 
 type CreatePostModalProps = {
 	modalOpen: boolean;
@@ -48,7 +49,7 @@ const CreatePostModal: FC<CreatePostModalProps> = ({
 
 	const postUploadMutation = useMutation(
 		(post: PostUpload) => {
-			return fetch("http://localhost:3000/api/posts/add", {
+			return fetch(`${PRODUCTION_URL}/api/posts/add`, {
 				method: "POST",
 				body: JSON.stringify(post),
 			});

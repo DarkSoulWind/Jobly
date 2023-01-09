@@ -1,6 +1,7 @@
 import React, { FC, useState } from "react";
 import { FaGoogle } from "react-icons/fa";
 import { signIn } from "next-auth/react";
+import { PRODUCTION_URL } from "@lib/url";
 
 const SignInWithGoogleButton: FC = () => {
 	const [loading, setLoading] = useState(false);
@@ -8,7 +9,7 @@ const SignInWithGoogleButton: FC = () => {
 	const handleSignIn = async () => {
 		setLoading(true);
 		await signIn("google", {
-			callbackUrl: "http://localhost:3000/feed",
+			callbackUrl: `${PRODUCTION_URL}/feed`,
 		});
 		setLoading(false);
 	};

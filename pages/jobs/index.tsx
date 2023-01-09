@@ -10,6 +10,7 @@ import Link from "next/link";
 import Navbar from "@components/nav/Navbar";
 import Footer from "@components/footer/Footer";
 import { FaLocationArrow, FaSearch } from "react-icons/fa";
+import { PRODUCTION_URL } from "@lib/url";
 
 const popularSearches = [
 	"Supermarket",
@@ -110,7 +111,7 @@ const Jobs: NextPage = () => {
 								key={index}
 								onClick={() => setSearchInput(job)}
 								href={
-									`http://localhost:3000/jobs/search/${job}?` +
+									`${PRODUCTION_URL}/jobs/search/${job}?` +
 									new URLSearchParams({
 										distance: "10",
 										location: "",

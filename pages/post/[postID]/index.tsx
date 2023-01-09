@@ -1,15 +1,23 @@
-"JOB POST PAGE";
+"POST PAGE";
 
 import { useRef, useState } from "react";
 import type {
-	GetStaticPropsContext,
+	GetStaticPaths,
+	GetStaticProps,
 	InferGetStaticPropsType,
 	NextPage,
 } from "next";
 import Head from "next/head";
 import { useRouter } from "next/router";
 import { useSession } from "next-auth/react";
-import { UserPreference, Comment, Follow } from "@prisma/client";
+import {
+	UserPreference,
+	Comment,
+	Follow,
+	Post,
+	PostLike,
+	User,
+} from "@prisma/client";
 import { prisma } from "@lib/prisma";
 import Navbar from "@components/nav/Navbar";
 import PostComponent from "@components/post/Post";
@@ -45,7 +53,7 @@ const PostPage: NextPage<InferGetStaticPropsType<typeof getStaticProps>> = ({
 	const getUserByEmail = async () => {
 		if (sessionStatus === "authenticated") {
 			const response = await fetch(
-				`http://localhost:3000/api/user/email/${data.user?.email}`
+				`${PRODUCTION_URL}/api/user/email/${data.user?.email}`
 			);
 			const responseData: UserWithPreferences | null =
 				await response.json();
@@ -71,13 +79,10 @@ const PostPage: NextPage<InferGetStaticPropsType<typeof getStaticProps>> = ({
 				commentText,
 			};
 			console.log("Posting...");
-			const response = await fetch(
-				"http://localhost:3000/api/comments/add",
-				{
-					method: "POST",
-					body: JSON.stringify(body),
-				}
-			);
+			const response = await fetch("${PRODUCTION_URL}/api/comments/add", {
+				method: "POST",
+				body: JSON.stringify(body),
+			});
 			const data: Comment & {
 				user: {
 					name: string;
@@ -108,8 +113,10 @@ const PostPage: NextPage<InferGetStaticPropsType<typeof getStaticProps>> = ({
 		<>
 			<Head>
 				<title>
-					{posterData?.name} | "{postData?.postText.substring(0, 30)}
-					{postData && postData?.postText.length > 30 ? "..." : ""}"
+					{posterData?.name} | &quot;
+					{postData?.postText.substring(0, 30)}
+					{postData && postData?.postText.length > 30 ? "..." : ""}
+					&quot;
 				</title>
 				<meta name="description" content={postData?.postText} />
 			</Head>
@@ -285,7 +292,7 @@ const PostPage: NextPage<InferGetStaticPropsType<typeof getStaticProps>> = ({
 	);
 };
 
-export async function getStaticPaths() {
+export const getStaticPaths: GetStaticPaths = async (context) => {
 	const data = await prisma.post.findMany({
 		select: {
 			id: true,
@@ -297,10 +304,44 @@ export async function getStaticPaths() {
 	}));
 
 	return { paths, fallback: false };
-}
+};
 
-export async function getStaticProps(context: GetStaticPropsContext) {
-	const { postID } = context.params as { postID: string };
+type GetStaticPropsRes = {
+	postData:
+		| (Post & {
+				user: {
+					postLikes: {
+						userID: string;
+						postID: string;
+					}[];
+					image: string | null;
+					name: string;
+					preferences: UserPreference | null;
+				};
+				comments: Comment[];
+				postLikes: PostLike[];
+		  })
+		| null;
+	posterData:
+		| (User & {
+				preferences: UserPreference | null;
+		  })
+		| null;
+	commentData: (Comment & {
+		user: {
+			image: string | null;
+			name: string;
+			preferences: UserPreference | null;
+			email: string | null;
+		};
+	})[];
+};
+
+export const getStaticProps: GetStaticProps<
+	GetStaticPropsRes,
+	{ postID: string }
+> = async (context) => {
+	const postID = context.params?.postID;
 	const postData = await prisma.post.findUnique({
 		where: {
 			id: postID,
@@ -360,7 +401,8 @@ export async function getStaticProps(context: GetStaticPropsContext) {
 			commentData: JSON.parse(JSON.stringify(commentData)),
 			fallback: false,
 		} as Props,
+		revalidate: 10,
 	};
-}
+};
 
 export default PostPage;

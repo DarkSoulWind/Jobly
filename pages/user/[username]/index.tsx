@@ -28,6 +28,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import Alert from "@components/alert/Alert";
 import FollowersModal from "@components/modal/FollowersModal";
 import Markdown from "@components/markdown/Markdown";
+import { PRODUCTION_URL } from "@lib/url";
 
 type UserPreferencesFollows =
 	| (User & {
@@ -104,7 +105,7 @@ const UserProfile: NextPage<
 			if (data?.user?.email !== profileState.email) {
 				console.log("Fetching your data...");
 				const response = await fetch(
-					`http://localhost:3000/api/user/email/${data?.user?.email}`
+					`${PRODUCTION_URL}/api/user/email/${data?.user?.email}`
 				);
 				const responseData: UserPreferencesFollows =
 					await response.json();
@@ -132,6 +133,7 @@ const UserProfile: NextPage<
 		getUserByEmail();
 	}, [data]);
 
+	// TODO: fix this shit
 	const handleFollow = async () => {
 		setFollowButtonLoading(true);
 		const body = {
@@ -142,7 +144,7 @@ const UserProfile: NextPage<
 		if (!profileState.isFollowing) {
 			try {
 				const response = await fetch(
-					"http://localhost:3000/api/follows/add",
+					`${PRODUCTION_URL}/api/follows/add`,
 					{
 						method: "POST",
 						body: JSON.stringify(body),
@@ -168,7 +170,7 @@ const UserProfile: NextPage<
 		else {
 			try {
 				const response = await fetch(
-					"http://localhost:3000/api/follows/delete",
+					`${PRODUCTION_URL}/api/follows/delete`,
 					{
 						method: "POST",
 						body: JSON.stringify(body),
@@ -197,7 +199,7 @@ const UserProfile: NextPage<
 	const handleChatButton = async () => {
 		const body = { userid1: yourData?.id, userid2: props.id };
 		const response = await fetch(
-			"http://localhost:3000/api/chats/findSharedPriv",
+			`${PRODUCTION_URL}/api/chats/findSharedPriv`,
 			{ method: "POST", body: JSON.stringify(body) }
 		);
 		const data: { exists: boolean; chatid?: string } =
@@ -208,7 +210,7 @@ const UserProfile: NextPage<
 		if (!data.exists) {
 			const newChatID = uuid();
 			const chatname = `${yourData?.name} and ${props.name}`;
-			await fetch("http://localhost:3000/api/chats/create", {
+			await fetch(`${PRODUCTION_URL}/api/chats/create`, {
 				method: "POST",
 				body: JSON.stringify({
 					chatid: newChatID,

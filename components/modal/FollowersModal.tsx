@@ -1,6 +1,7 @@
 import React, { FC } from "react";
 import { ProfileState } from "../../lib/reducers/profileReducer";
 import Modal from "./Modal";
+import { PRODUCTION_URL } from "@lib/url";
 
 interface FollowersModalProps {
 	modalOpen: boolean;
@@ -39,7 +40,7 @@ const FollowersModal: FC<FollowersModalProps> = ({
 						/>
 						<div className="text-sm">
 							<a
-								href={`http://localhost:3000/user/${follower.name}`}
+								href={`${PRODUCTION_URL}/user/${follower.name}`}
 								className="font-bold hover:underline"
 							>
 								{follower.name}

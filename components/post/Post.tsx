@@ -22,6 +22,7 @@ import { HiFlag, HiTrash } from "react-icons/hi";
 import { useMutation, useQueryClient } from "react-query";
 import usePostLiked from "@lib/hooks/usePostLiked";
 import Markdown from "@components/markdown/Markdown";
+import { PRODUCTION_URL } from "@lib/url";
 
 type PostWithLikesAndUser =
 	| Post & {
@@ -62,14 +63,14 @@ const Post: FC<PostProps> = ({
 	const postLikeMutation = useMutation(
 		(data: { userID: string; postID: string; postLiked: boolean }) => {
 			return postLiked
-				? fetch("http://localhost:3000/api/post-likes/delete", {
+				? fetch(`${PRODUCTION_URL}/api/post-likes/delete`, {
 						method: "POST",
 						body: JSON.stringify({
 							userID: data.userID,
 							postID: data.postID,
 						}),
 				  })
-				: fetch("http://localhost:3000/api/post-likes/add", {
+				: fetch(`${PRODUCTION_URL}/api/post-likes/add`, {
 						method: "POST",
 						body: JSON.stringify({
 							userID: data.userID,
@@ -126,7 +127,7 @@ const Post: FC<PostProps> = ({
 		try {
 			console.log("Deleting post...");
 			const response = await fetch(
-				`http://localhost:3000/api/posts/delete/${postID}`,
+				`${PRODUCTION_URL}/api/posts/delete/${postID}`,
 				{
 					method: "POST",
 				}

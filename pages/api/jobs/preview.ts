@@ -1,6 +1,10 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { ReedScraper, SiteType } from "@lib/scraper";
-
+import {
+	ReedScraper,
+	SiteType,
+	TotaljobsScraper,
+	JobPreview,
+} from "@lib/scraper";
 interface body {
 	link: string;
 	type: SiteType;
@@ -8,10 +12,10 @@ interface body {
 
 export default async function handler(
 	req: NextApiRequest,
-	res: NextApiResponse
+	res: NextApiResponse<Partial<JobPreview> & { type: SiteType; link: string }>
 ) {
 	if (req.method !== "POST") {
-		res.status(403).json({ message: "Please use the POST method only." });
+		res.status(403).end({ message: "Please use the POST method only." });
 	} else {
 		try {
 			const { link, type } = JSON.parse(req.body) as body;
@@ -29,8 +33,13 @@ export default async function handler(
 
 async function getResults(type: SiteType, link: string) {
 	switch (type) {
-		case "Reed":
+		case "Reed": {
 			const results = await ReedScraper.scrapePreview(link);
 			return results;
+		}
+		case "Totaljobs": {
+			const results = await TotaljobsScraper.scrapePreview(link);
+			return results;
+		}
 	}
 }

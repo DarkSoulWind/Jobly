@@ -37,11 +37,11 @@ const CommentResults: FC<CommentResultsProps> = ({
 			{comments.map((comment, index) => (
 				<button
 					key={index}
-					onClick={() => router.push(`/post/${comment.PostID}`)}
+					onClick={() => router.push(`/post/${comment.postID}`)}
 					className="w-full flex items-start gap-3"
 				>
 					{boldenPhrase(
-						comment.CommentText,
+						comment.commentText,
 						router.query.searchitem as string
 					)}
 				</button>

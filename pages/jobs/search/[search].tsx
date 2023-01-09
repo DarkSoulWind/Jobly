@@ -27,6 +27,7 @@ import { useSession } from "next-auth/react";
 import { useQuery, useQueryClient, useInfiniteQuery } from "react-query";
 import { FaLocationArrow, FaSearch } from "react-icons/fa";
 import axios, { AxiosResponse } from "axios";
+import { PRODUCTION_URL } from "@lib/url";
 
 const SelectedPreview = lazy(() =>
 	import("@components/job/SelectedPreview").then((module) => ({
@@ -53,22 +54,15 @@ const initState = (
 };
 
 // FILTER OPTIONS
-type JobType =
-	| "Part time"
-	| "Full time"
-	| "Voluntary"
-	| "Work from home"
-	| "Internship"
-	| "Weekend";
-const jobTypes: JobType[] = [
+const jobTypes = [
 	"Part time",
 	"Full time",
 	"Voluntary",
 	"Work from home",
 	"Internship",
 	"Weekend",
-];
-
+] as const;
+type JobType = typeof jobTypes[number];
 const distanceTypes = [10, 25, 50, 100];
 
 const Jobs: NextPage<InferGetServerSidePropsType<typeof getServerSideProps>> = (
@@ -148,7 +142,7 @@ const Jobs: NextPage<InferGetServerSidePropsType<typeof getServerSideProps>> = (
 	 */
 	const getSavedJobs = async () => {
 		const response = await fetch(
-			`http://localhost:3000/api/jobs/save/${sessionData?.user?.email}`
+			`${PRODUCTION_URL}/api/jobs/save/${sessionData?.user?.email}`
 		);
 		const data: SavedJob[] = await response.json();
 		return data;
@@ -197,14 +191,18 @@ const Jobs: NextPage<InferGetServerSidePropsType<typeof getServerSideProps>> = (
 			.map((val) => val.type);
 		setSelectedJobTypes(updatedJobTypes);
 
-		router.push({
-			pathname: `/jobs/search/${jobSearchState.searchInput}`,
-			query: {
-				location: jobSearchState.locationInput,
-				type: updatedJobTypes,
-				distance,
+		router.push(
+			{
+				pathname: `/jobs/search/${jobSearchState.searchInput}`,
+				query: {
+					location: jobSearchState.locationInput,
+					type: updatedJobTypes,
+					distance,
+				},
 			},
-		});
+			undefined,
+			{ shallow: true }
+		);
 	};
 
 	return (
@@ -415,7 +413,7 @@ async function getJobs(
 	cursor: number = 0
 ) {
 	const url =
-		"http://localhost:3000/api/jobs?" +
+		`${PRODUCTION_URL}/api/jobs?` +
 		new URLSearchParams({
 			search,
 			location,

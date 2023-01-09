@@ -10,6 +10,7 @@ import {
 	useQuery,
 	useQueryClient,
 } from "react-query";
+import { PRODUCTION_URL } from "@lib/url";
 
 interface SelectedPreviewProps {
 	link: string;
@@ -51,7 +52,7 @@ const SelectedPreview: FC<SelectedPreviewProps> = ({
 
 	const addSaveJobMutation = useMutation(
 		(bodyData: SaveJobBody) => {
-			return fetch("http://localhost:3000/api/jobs/save/add", {
+			return fetch(`${PRODUCTION_URL}/api/jobs/save/add`, {
 				method: "POST",
 				body: JSON.stringify(bodyData),
 			});
@@ -69,7 +70,7 @@ const SelectedPreview: FC<SelectedPreviewProps> = ({
 
 	const removeSaveJobMutation = useMutation(
 		(body: { email: string; link: string }) => {
-			return fetch("http://localhost:3000/api/jobs/save/remove", {
+			return fetch(`${PRODUCTION_URL}/api/jobs/save/remove`, {
 				method: "POST",
 				body: JSON.stringify(body),
 			});
@@ -86,7 +87,7 @@ const SelectedPreview: FC<SelectedPreviewProps> = ({
 	);
 
 	const getPreviewjobs = useCallback(async () => {
-		const response = await fetch("http://localhost:3000/api/jobs/preview", {
+		const response = await fetch(`${PRODUCTION_URL}/api/jobs/preview`, {
 			method: "POST",
 			body: JSON.stringify({ link, type }),
 		});

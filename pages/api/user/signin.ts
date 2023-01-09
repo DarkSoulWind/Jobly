@@ -11,6 +11,7 @@ export default async function handler(
 		return;
 	}
 
+	console.log("🚀 ~ file: signin.ts:43 ~ body", req.body);
 	const hash = createHash("sha256");
 	const { email, password } = req.body;
 

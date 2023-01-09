@@ -5,6 +5,7 @@ import {
 	ProfileState,
 	PROFILE_ACTION,
 } from "@lib/reducers/profileReducer";
+import { PRODUCTION_URL } from "@lib/url";
 
 type EditProfileModalProps = {
 	modalOpen: boolean;
@@ -61,7 +62,7 @@ const EditProfileModal: FC<EditProfileModalProps> = ({
 		try {
 			// POSTING TO api/user-preferences/update/[email]
 			const response = await fetch(
-				`http://localhost:3000/api/user-preferences/update/${profileState.email}`,
+				`${PRODUCTION_URL}/api/user-preferences/update/${profileState.email}`,
 				{
 					method: "PUT",
 					body: JSON.stringify(body),
@@ -178,7 +179,7 @@ const EditProfileModal: FC<EditProfileModalProps> = ({
 
 				<label className="text-sm mt-4">Phone number</label>
 				<input
-					type="text"
+					type="tel"
 					value={phoneNumber}
 					onChange={(e) => setPhone(e.target.value)}
 					className="p-2 rounded-xl border-[2px] outline-1"

@@ -23,6 +23,7 @@ import { useRouter } from "next/router";
 import Alert from "@components/alert/Alert";
 import SkeletonLoaderPost from "@components/post/SkeletonLoaderPost";
 import { AnimatePresence } from "framer-motion";
+import { PRODUCTION_URL } from "@lib/url";
 
 // INITIALIZER FOR GLOBAL STATE FOR THIS COMPONENT
 const initFeedState = ({}): FeedState => {
@@ -47,7 +48,7 @@ const Feed: NextPage = () => {
 
 	const getUserByEmail = async () => {
 		const response = await fetch(
-			`http://localhost:3000/api/user/email/${data?.user?.email}`
+			`${PRODUCTION_URL}/api/user/email/${data?.user?.email}`
 		);
 		const responseData: UserWithPreferences | null = await response.json();
 		// console.log("YOUR DATA:", JSON.stringify(responseData, null, 4));
@@ -56,7 +57,7 @@ const Feed: NextPage = () => {
 
 	const getRecommendedPosts = async () => {
 		const response = await fetch(
-			`http://localhost:3000/api/feed/recommend/${data?.user?.email}`
+			`${PRODUCTION_URL}/api/feed/recommend/${data?.user?.email}`
 		);
 		const responseData: (Post & {
 			user: {
@@ -267,6 +268,12 @@ const Feed: NextPage = () => {
 							{postsFetchError && <p>Error loading posts.</p>}
 
 							<div className="flex flex-col items-center gap-2">
+								{!posts ||
+									(posts?.length === 0 && (
+										<div className="m-[5rem] text-4xl font-bold text-slate-400">
+											Such empty
+										</div>
+									))}
 								{posts?.map((post) => (
 									<div className="w-full" key={post.id}>
 										<PostComponent

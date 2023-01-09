@@ -97,6 +97,8 @@ export default async function handler(
 		const distances = dijkstra(userNodes, startNode);
 		const recommendedPosts = Object.entries(distances).flatMap(
 			([id, distance]) => {
+				// dont return the user data if there is no relationship (distance is Infinity)
+				if (distance === Infinity) return [];
 				return userData.find((user) => user.id === id)!.posts;
 			}
 		);

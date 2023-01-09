@@ -30,6 +30,7 @@ import {
 import { Chats, AllFollows } from "../../lib/actions/types/chat";
 import { Chat, Participant } from "@prisma/client";
 import Alert from "@components/alert/Alert";
+import { PRODUCTION_URL } from "@lib/url";
 
 // GLOBAL STATE FOR THIS PAGE
 const initChatState = (selectedChatID: string): ChatState => {
@@ -45,9 +46,7 @@ const initChatState = (selectedChatID: string): ChatState => {
 };
 
 const fetchChats = async (email: string) => {
-	const response = await fetch(
-		`http://localhost:3000/api/chats/email/${email}`
-	);
+	const response = await fetch(`${PRODUCTION_URL}/api/chats/email/${email}`);
 	const responseData: Chats = await response.json();
 
 	if (!response.ok) {
@@ -57,7 +56,7 @@ const fetchChats = async (email: string) => {
 };
 
 const fetchFollows = async (email: string) => {
-	const response = await fetch(`http://localhost:3000/api/follows/${email}`);
+	const response = await fetch(`${PRODUCTION_URL}/api/follows/${email}`);
 	const responseData: FollowResponse = await response.json();
 
 	if (!response.ok) {

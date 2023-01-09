@@ -6,6 +6,7 @@ import React, {
 	Suspense,
 	Dispatch,
 	SetStateAction,
+	useEffect,
 } from "react";
 import LoadingJobListing from "@components/job/SkeletonLoadingJob";
 import { JobListing } from "@lib/scraper";
@@ -13,8 +14,8 @@ import {
 	FetchNextPageOptions,
 	InfiniteData,
 	InfiniteQueryObserverResult,
-	useQueryClient,
 } from "react-query";
+import { useInView } from "react-intersection-observer";
 
 const JobListingComponent = lazy(() =>
 	import("@components/job/JobListing").then((module) => ({
@@ -78,7 +79,14 @@ const JobResults: FC<JobResultsProps> = ({
 	isRefetchErrorJobData,
 	hasNextPage,
 }) => {
-	const queryClient = useQueryClient();
+	const { ref: loadMoreRef, inView } = useInView({ threshold: 0 });
+
+	useEffect(() => {
+		if (inView) {
+			console.log("at the bottom, loading more");
+			fetchNextPage();
+		}
+	}, [inView]);
 
 	if (isErrorJobData || isLoadingErrorJobData || isRefetchErrorJobData)
 		return (
@@ -135,6 +143,7 @@ const JobResults: FC<JobResultsProps> = ({
 							);
 						})}
 				</section>
+
 				{isFetchingNextPage && (
 					<section className="flex py-5 flex-col w-full h-full items-start justify-start gap-5">
 						{new Array(10).fill(1).map((a, i) => (
@@ -142,17 +151,13 @@ const JobResults: FC<JobResultsProps> = ({
 						))}
 					</section>
 				)}
-				{hasNextPage && (
-					<div className="w-full flex justify-center py-5">
-						<button
-							onClick={async () => {
-								await fetchNextPage();
-							}}
-							className="bg-blue-500 w-full py-1 px-5 font-bold rounded-full text-white hover:bg-blue-600 transition-all"
-						>
-							Show more
-						</button>
-					</div>
+
+				{/* LOADS MORE WHEN IN VIEW */}
+				{hasNextPage && !isFetchingNextPage && (
+					<div
+						ref={loadMoreRef}
+						className="w-full flex justify-center py-5"
+					></div>
 				)}
 			</main>
 		</>

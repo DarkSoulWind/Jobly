@@ -5,6 +5,7 @@ import { signOut, useSession } from "next-auth/react";
 import { FaComment, FaSearch, FaSuitcase, FaUsers } from "react-icons/fa";
 import { Menu, Transition } from "@headlessui/react";
 import { HiAcademicCap, HiBriefcase, HiLogout } from "react-icons/hi";
+import { PRODUCTION_URL } from "@lib/url";
 
 interface NavbarProps {
 	searchitem?: string;
@@ -140,18 +141,17 @@ const Navbar: FC<NavbarProps> = (props) => {
 
 									<Menu.Item>
 										{({ active }) => (
-											<Link href="/jobs/saved">
-												<a
-													className={`${
-														active
-															? "bg-violet-500 text-white"
-															: "text-gray-900"
-													} group flex gap-2 w-full items-center transition-all duration-300 rounded-md px-2 py-2 text-sm`}
-												>
-													<HiBriefcase className="w-5 h-5" />
-													<p>Saved jobs</p>
-												</a>
-											</Link>
+											<a
+												className={`${
+													active
+														? "bg-violet-500 text-white"
+														: "text-gray-900"
+												} group flex gap-2 w-full items-center transition-all duration-300 rounded-md px-2 py-2 text-sm`}
+												href="/jobs/saved"
+											>
+												<HiBriefcase className="w-5 h-5" />
+												<p>Saved jobs</p>
+											</a>
 										)}
 									</Menu.Item>
 
@@ -165,8 +165,7 @@ const Navbar: FC<NavbarProps> = (props) => {
 												} group flex gap-2 w-full items-center transition-all duration-300 rounded-md px-2 py-2 text-sm`}
 												onClick={() => {
 													signOut({
-														callbackUrl:
-															"http://localhost:3000/auth/signin",
+														callbackUrl: `${PRODUCTION_URL}/auth/signin`,
 													});
 												}}
 											>

@@ -28,7 +28,8 @@
 		"**/*.ts",
 		"**/*.tsx",
 		"tests/RSA.mts",
-		"tests/RSA.ts"
+		"tests/RSA.test..ts",
+		"readFiles.js"
 	],
 	"exclude": ["node_modules"]
 }

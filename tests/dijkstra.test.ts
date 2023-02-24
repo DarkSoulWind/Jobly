@@ -1,4 +1,4 @@
-import { GraphNode, Edge, dijkstra } from "../lib/graph";
+import { GraphNode, Edge, dijkstra } from "../src/lib/graph";
 import { expect, test, describe } from "@jest/globals";
 
 interface MockUser {

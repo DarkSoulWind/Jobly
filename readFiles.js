@@ -10,13 +10,13 @@
 const fs = require("fs/promises");
 
 const RESULTS_FILE = "results.md";
-const DIRS = ["components", "lib", "pages", "tests", "../nea-server/src"];
-const IGNORE = [".DS_Store"];
+const DIRS = ["src", "tests", "../nea-server/src"];
+const IGNORE_FILES = [".DS_Store"];
 
 async function readDirectory(path) {
 	const dir = await fs.opendir(path);
 	for await (const dirent of dir) {
-		if (IGNORE.includes(dirent.name)) continue;
+		if (IGNORE_FILES.includes(dirent.name)) continue;
 
 		const pathname = `${path}/${dirent.name}`;
 		console.log(pathname + "\n");

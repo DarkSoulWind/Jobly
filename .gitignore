@@ -39,3 +39,4 @@ test.*
 
 countLines.sh
 results.md
+**/*.*~

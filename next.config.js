@@ -2,7 +2,14 @@
 const nextConfig = {
 	reactStrictMode: true,
 	swcMinify: true,
-	experimental: {},
+	experimental: {
+        swcPlugins: [
+            "next-superjson-plugin",
+            {
+                excluded: []
+            }
+        ]
+    },
 	images: {
 		domains: ["lh3.googleusercontent.com"],
 	},

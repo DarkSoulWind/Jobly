@@ -14,22 +14,17 @@
 		"isolatedModules": true,
 		"jsx": "preserve",
 		"incremental": true,
+		"pretty": true,
 		"baseUrl": "./",
 		"paths": {
-			"@components/*": ["components/*"],
-			"@lib/*": ["lib/*"],
-			"@reducers/*": ["lib/reducers/*"],
+			"@components/*": ["src/components/*"],
+			"@lib/*": ["src/lib/*"],
+			"@reducers/*": ["src/lib/reducers/*"],
 			"@public/*": ["public/*"],
-			"@hooks/*": ["lib/hooks/*"]
+			"@hooks/*": ["src/lib/hooks/*"],
+			"@utils/*": ["src/utils/*"]
 		}
 	},
-	"include": [
-		"next-env.d.ts",
-		"**/*.ts",
-		"**/*.tsx",
-		"tests/RSA.mts",
-		"tests/RSA.test..ts",
-		"readFiles.js"
-	],
+	"include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", "src/utils/url.mjs"],
 	"exclude": ["node_modules"]
 }

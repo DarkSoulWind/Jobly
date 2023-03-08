@@ -237,9 +237,9 @@ const Feed: NextPage = () => {
               <div className="flex flex-col items-center gap-2">
                 {!posts ||
                   (posts?.length === 0 && (
-                    <div className="m-[5rem] text-4xl font-bold text-slate-400">
+                    <p className="m-[5rem] text-4xl font-bold text-slate-400">
                       Such empty
-                    </div>
+                    </p>
                   ))}
                 {posts?.map((post) => (
                   <div className="w-full" key={post.id}>

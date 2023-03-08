@@ -1,4 +1,5 @@
 import { router } from "../trpc";
+import ChatRouter from "./chat"
 import CommentRouter from "./comment";
 import ConnectRouter from "./connect";
 import FollowRouter from "./follow";
@@ -9,6 +10,7 @@ import UserRouter from "./user";
 import UserInterestRouter from "./userInterest";
 
 export const appRouter = router({
+  chat: ChatRouter,
   comment: CommentRouter,
   connect: ConnectRouter,
   post: PostRouter,

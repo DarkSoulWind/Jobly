@@ -9,7 +9,6 @@ import { useSession } from "next-auth/react";
 import Footer from "src/components/footer/Footer";
 import Navbar from "src/components/nav/Navbar";
 import HomeBackground from "@public/images/HomeBackground.jpeg";
-import { trpc } from "@utils/trpc";
 import { FaSearch } from "react-icons/fa";
 
 const Home: NextPage = () => {

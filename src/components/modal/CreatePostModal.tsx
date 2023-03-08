@@ -1,11 +1,5 @@
-import React, {
-  ChangeEvent,
-  FC,
-  Fragment,
-  useRef,
-  useState,
-} from "react";
-import { FaHashtag, FaImage, FaTimesCircle } from "react-icons/fa";
+import React, { ChangeEvent, FC, Fragment, useRef, useState } from "react";
+import { HiPhoto, HiXCircle } from "react-icons/hi2";
 import { getDownloadURL, ref, StorageReference } from "firebase/storage";
 import { useUploadFile } from "react-firebase-hooks/storage";
 import { v4 as uuid } from "uuid";
@@ -52,6 +46,7 @@ const CreatePostModal: FC<CreatePostModalProps> = ({
       queryClient.post.getRecommended.invalidate();
       toast.success("Posted successfully!");
       setPostText("");
+      setSelectedImage({ src: "" });
       toggle();
     },
     onError(error) {
@@ -107,7 +102,7 @@ const CreatePostModal: FC<CreatePostModalProps> = ({
     });
   };
 
-  // when posting the post
+  // when the post button is clicked
   const handleSubmit = async () => {
     const validResults = SubmitBody.safeParse(postText.trim());
     console.log("VALIDATION RESULTS", validResults);
@@ -207,8 +202,8 @@ const CreatePostModal: FC<CreatePostModalProps> = ({
                         }}
                         className="absolute group -top-1 right-1"
                       >
-                        <FaTimesCircle className="w-5 h-5 bg-white rounded-full hover:opacity-70" />
-                        <p className="absolute text-sm w-[7rem] -top-8 scale-0 group-hover:scale-100 transition-all duration-150 ease-in-out -right-[3rem] py-1 px-1 border-[1px] border-slate-200 rounded-lg bg-white shadow-md shadow-gray-700">
+                        <HiXCircle className="w-5 h-5 bg-white rounded-full hover:opacity-70" />
+                        <p className="absolute text-sm w-[7rem] -top-6 right-0 scale-0 opacity-0 group-hover:opacity-100 group-hover:scale-100 transition-opacity duration-500 ease-in-out -right-10 py-1 px-1 border-[1px] border-slate-200 rounded-lg bg-white shadow-sm">
                           Remove photo
                         </p>
                       </button>
@@ -217,15 +212,6 @@ const CreatePostModal: FC<CreatePostModalProps> = ({
 
                   {/* BOTTOM BUTTONS */}
                   <div className="flex flex-start items-center mt-3 px-1">
-                    {/* HASHTAG BUTTON */}
-                    <button className="group relative aspect-square rounded-full p-3 hover:bg-slate-100 transition-all">
-                      <FaHashtag className="w-5 h-5 fill-slate-600" />
-                      {/* HOVER TOOLTIP */}
-                      <p className="absolute text-sm w-[7rem] -top-5 scale-0 group-hover:scale-100 transition-all duration-150 ease-in-out -right-10 py-1 px-1 border-[1px] border-slate-200 rounded-lg bg-white shadow-md shadow-gray-700">
-                        Add hashtag
-                      </p>
-                    </button>
-
                     {/* UPLOAD FILES BUTTON (only accessible by ref, hidden from dom) */}
                     <input
                       type="file"
@@ -241,9 +227,9 @@ const CreatePostModal: FC<CreatePostModalProps> = ({
                       }}
                       className="group relative aspect-square rounded-full p-3 hover:bg-slate-100 transition-all"
                     >
-                      <FaImage className="w-5 h-5 fill-slate-600" />
+                      <HiPhoto className="w-5 h-5 fill-slate-600" />
                       {/* HOVER TOOLTIP */}
-                      <p className="absolute text-sm w-[7rem] -top-5 scale-0 group-hover:scale-100 transition-all duration-150 ease-in-out -right-10 py-1 px-1 border-[1px] border-slate-200 rounded-lg bg-white shadow-md shadow-gray-700">
+                      <p className="absolute text-sm w-[7rem] -top-5 scale-0 opacity-0 group-hover:opacity-100 group-hover:scale-100 transition-opacity duration-500 ease-in-out -right-10 py-1 px-1 border-[1px] border-slate-200 rounded-lg bg-white shadow-sm">
                         Add a photo
                       </p>
                     </button>

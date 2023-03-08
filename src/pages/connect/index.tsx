@@ -33,6 +33,11 @@ const ConnectPage: NextPage = () => {
             {recommendedUsers?.map((user) => (
               <RecommendedUserListing user={user} />
             ))}
+            {recommendedUsers?.length === 0 && (
+                    <p className="text-4xl text-center font-bold text-slate-400">
+                      Such empty
+                    </p>
+            )}
           </div>
 
           <div className="block space-y-3">

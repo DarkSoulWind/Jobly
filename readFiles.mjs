@@ -7,7 +7,8 @@
  * the computer doesn't explode.
  */
 
-const fs = require("fs/promises");
+// const fs = require("fs/promises");
+import fs from "fs/promises"
 
 const RESULTS_FILE = "results.md";
 const DIRS = ["src", "tests", "../nea-server/src"];
@@ -19,14 +20,14 @@ async function readDirectory(path) {
 		if (IGNORE_FILES.includes(dirent.name)) continue;
 
 		const pathname = `${path}/${dirent.name}`;
-		console.log(pathname + "\n");
+		console.log(pathname);
 
 		if (dirent.isDirectory()) {
 			await readDirectory(pathname);
 		} else {
 			const contents = await fs.readFile(pathname);
 			const a = `
-# **${pathname}**
+### **${pathname}**
 
 \`\`\`ts
 ${contents.toLocaleString()}

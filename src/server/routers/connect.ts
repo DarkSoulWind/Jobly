@@ -3,6 +3,17 @@ import { procedure, router } from "../trpc";
 import { prisma } from "@lib/prisma";
 import { dijkstra, Edge, GraphNode } from "@lib/graph";
 
+interface RecommendationReasonsMap {
+  [userID: string]: {
+    reason: string;
+    name: string;
+    scores: {
+      postLikes: number;
+      interests: number;
+    };
+  };
+}
+
 const getRecommendedPeople = procedure
   .input(
     z.object({
@@ -73,12 +84,32 @@ const getRecommendedPeople = procedure
       },
     });
 
-    // TODO: remove people who you already follow from the recommended list
     const yourData = usersData.find((user) => user.email === email)!;
-    const recommendationReasons = new Map<
-      string,
-      { name: string; reason: string }
-    >();
+
+    // STRUCTURE OF RECOMMENDATION REASONS
+    // {
+    //   "id": {
+    //   "name": "Datmin",
+    //   "reason": "Based on the highest score out of postLikes, follows and interests.",
+    //   "scores":
+    //   {
+    //   "postLikes": 0,
+    //   "interests": 69
+    //   }
+    //   }
+    // }
+
+    const recommendationReasons: RecommendationReasonsMap = {};
+    for (const user of usersData) {
+      recommendationReasons[user.id] = {
+        reason: "",
+        name: user.name,
+        scores: {
+          postLikes: 0,
+          interests: 0,
+        },
+      };
+    }
 
     const userNodes = usersData.map(
       (user) => new GraphNode("user", { ...user })
@@ -93,12 +124,17 @@ const getRecommendedPeople = procedure
         // if the user liked their own post then skip
         if (userNode.get("name") === user.name) return [];
 
-        recommendationReasons.set(userNode.get("id"), {
-          name: userNode.get("name"),
-          reason: "Based on posts you liked",
-        });
+        recommendationReasons[userNode.get("id")].scores.postLikes += 1;
+        if (
+          Math.max(
+            ...Object.values(recommendationReasons[userNode.get("id")].scores)
+          ) === recommendationReasons[userNode.get("id")].scores.postLikes
+        ) {
+          recommendationReasons[userNode.get("id")].reason =
+            "Based on posts you've liked";
+        }
 
-        console.log(`Liked post by ${userNode.get("name")}`);
+        console.log(`${yourData.name} liked post by ${userNode.get("name")}`);
         return new Edge("liked post", { ...user })
           .link(userNode, getUserNodeByID(user.id)!)
           .setWeight(1);
@@ -138,10 +174,23 @@ const getRecommendedPeople = procedure
           );
 
           if (userNode1.get("id") === yourData.id) {
-            recommendationReasons.set(userNode2.get("id"), {
-              name: userNode2.get("name"),
-              reason: "Based on your interests",
-            });
+            recommendationReasons[userNode2.get("id")].scores.interests += 1;
+            if (
+              Math.max(
+                ...Object.values(
+                  recommendationReasons[userNode2.get("id")].scores
+                )
+              ) === recommendationReasons[userNode2.get("id")].scores.interests
+            ) {
+              recommendationReasons[userNode2.get("id")].reason =
+                "Based on your interests";
+            }
+
+            //   recommendationReasons.set(userNode2.get("id"), {
+            //     name: userNode2.get("name"),
+            //     reason: "Based on your interests",
+            //   });
+            // }
           }
 
           return new Edge("interest", {
@@ -154,28 +203,18 @@ const getRecommendedPeople = procedure
       });
     });
 
-    const filteredByFollowsUserNodes = userNodes.filter(
-      (userNode) =>
-        !yourData.following.find(({ following: youAreFollowing }) => {
-          if (userNode.get("email") === email) {
-            return false;
-          }
-          if (youAreFollowing.id === userNode.get("id")) {
-            console.log(`You are following ${userNode.get("name")}`);
-          }
-          return youAreFollowing.id === userNode.get("id");
-        })
-    );
+    // your node is the start node
+    const startNode = userNodes.find((node) => node.get("email") === email)!;
+    const distances = dijkstra(userNodes, startNode);
 
-    const startNode = filteredByFollowsUserNodes.find(
-      (node) => node.get("email") === email
-    )!;
-    const distances = dijkstra(filteredByFollowsUserNodes, startNode);
-
+    // DEBUG PURPOSES ONLY
     // representing the results from dijkstra's algorithm as a 2d array with the name of the user
     // and the distance from the start node to the user
     const distancesNamed = Object.entries(distances).map(([id, distance]) => {
-      return [usersData.find((user) => user.id === id)!.name, distance];
+      return [
+        { name: usersData.find((user) => user.id === id)!.name, id },
+        distance,
+      ];
     });
     console.log(
       "file: post.ts~line: 160~getRecommendedPosts->query() callback->distancesNamed~distancesNamed",
@@ -190,22 +229,31 @@ const getRecommendedPeople = procedure
         // if the user is you dont return
         if (id === yourData.id) return [];
 
+        // if the user is in your following list
+        if (
+          yourData.following.filter(({ following }) => {
+            return following.id === id;
+          }).length > 0
+        )
+          return [];
+
+        // find the user with the id
         const selectedUser = usersData.find((user) => user.id === id)!;
         const selectedStuff = {
           id: selectedUser.id,
           name: selectedUser.name,
           image: selectedUser.image,
           preferences: selectedUser.preferences,
-          recommendationReason: recommendationReasons.get(selectedUser.id)
-            ?.reason,
+          recommendationReason: recommendationReasons[selectedUser.id].reason,
         };
-        console.log(
-          "file: connect.ts~line: 171~getRecommendedPeople->query() callback->recommendedUsers->flatMap() callback->selectedStuff->recommendationReason~recommendationReason",
-          recommendationReasons
-        );
 
         return selectedStuff;
       }
+    );
+
+    console.log(
+      "file: connect.ts~line: 171~getRecommendedPeople->query() callback->recommendedUsers->flatMap() callback->selectedStuff->recommendationReason~recommendationReason",
+      recommendationReasons
     );
 
     return recommendedUsers;

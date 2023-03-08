@@ -1,5 +1,5 @@
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
   binaryTargets = ["native", "darwin"]
 }
 
@@ -41,7 +41,7 @@ model User {
   email         String?         @unique
   emailVerified DateTime?
   id            String          @id @default(cuid())
-  image         String         @default("https://i.pinimg.com/236x/8e/73/0c/8e730ce55fb0199e7dc0bf76672e8dc6.jpg")
+  image         String          @default("https://i.pinimg.com/236x/8e/73/0c/8e730ce55fb0199e7dc0bf76672e8dc6.jpg")
   name          String          @unique
   password      String?
   phoneNumber   String?
@@ -58,6 +58,14 @@ model User {
   sessions      Session[]
   savedJobs     SavedJob[]      @relation("user")
   preferences   UserPreference?
+  key           UserKey?
+}
+
+model UserKey {
+  userID String @id
+  user   User?  @relation(fields: [userID], references: [id], onDelete: Cascade)
+  pub    String @unique
+  priv   String @unique
 }
 
 model VerificationToken {
@@ -69,7 +77,7 @@ model VerificationToken {
 }
 
 model UserPreference {
-  userID        String  @unique @id
+  userID        String  @id @unique
   firstName     String?
   lastName      String?
   pronouns      String?
@@ -153,9 +161,9 @@ model Participant {
   chat   Chat   @relation(fields: [chatID], references: [id], onDelete: Cascade)
   user   User   @relation(fields: [userID], references: [id], onDelete: Cascade)
 
+  @@id([userID, chatID])
   @@index([chatID])
   @@index([userID])
-  @@id([userID, chatID])
 }
 
 model Message {
@@ -196,7 +204,7 @@ model SavedJob {
 // TODO: add image file size and name functionality
 model Image {
   imageRef String @id
-  image String
-  name String
-  size Int
+  image    String
+  name     String
+  size     Int
 }

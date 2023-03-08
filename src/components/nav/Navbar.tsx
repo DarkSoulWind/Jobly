@@ -250,7 +250,7 @@ const Navbar: FC<NavbarProps> = (props) => {
           </button>
           <button
             onClick={() => router.push("/auth")}
-            className="transition-all text-white hover:bg-blue-700 font-semibold duration-300 bg-blue-500 rounded-full px-4 py-1"
+            className="text-white hover:bg-blue-700 font-semibold bg-blue-500 rounded-full px-4 py-1"
           >
             Get started
           </button>

@@ -43,6 +43,49 @@ const fetchFollowsByUserID = procedure
     return follows;
   });
 
+const fetchFollowsByEmail = procedure
+  .input(
+    z.object({
+      email: z.string().email(),
+    })
+  )
+  .query(async ({ input: { email } }) => {
+    const follows = await prisma.user.findFirst({
+      where: {
+        email,
+      },
+      select: {
+        name: true,
+        followers: {
+          select: {
+            follower: {
+              select: {
+              id: true,
+                name: true,
+                image: true,
+                password: false,
+              },
+            },
+          },
+        },
+        following: {
+          select: {
+            following: {
+              select: {
+              id: true,
+                name: true,
+                image: true,
+                password: false,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    return follows;
+  });
+
 const addFollow = procedure
   .input(
     z.object({
@@ -76,5 +119,6 @@ const addFollow = procedure
 
 export default router({
   getByUserID: fetchFollowsByUserID,
+  getByEmail: fetchFollowsByEmail,
   toggleFollow: addFollow,
 });

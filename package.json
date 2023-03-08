@@ -11,7 +11,7 @@
 		"start": "next start",
 		"lint": "next lint",
 		"test": "jest --detectOpenHandles",
-		"code-results": "node readFiles.js"
+		"code-results": "node readFiles.mjs"
 	},
 	"prisma": {
 		"seed": "ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed.ts"

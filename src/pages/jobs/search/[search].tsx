@@ -298,6 +298,7 @@ const Jobs: NextPage<InferGetServerSidePropsType<typeof getServerSideProps>> = (
                   <span className="font-bold bg-gradient-to-r from-fuchsia-800 to-rose-500 bg-clip-text text-transparent">
                     {jobData?.pages[jobData.pages.length - 1].keyword}
                   </span>
+                      {" "}jobs
                 </>
               )
             )}

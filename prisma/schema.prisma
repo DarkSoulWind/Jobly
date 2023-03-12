@@ -167,24 +167,25 @@ model Participant {
 }
 
 model Message {
-  id         String            @id @default(uuid())
+  id         String      @id @default(uuid())
   senderID   String
   chatID     String
-  text       String            @db.VarChar(280)
-  datePosted DateTime          @default(now())
-  received   Boolean           @default(false)
-  chat       Chat              @relation("chat", fields: [chatID], references: [id], onDelete: Cascade)
-  sender     User              @relation("sender", fields: [senderID], references: [id], onDelete: Cascade)
-  cipher     MessageCipherKey? @relation("message")
+  text       String      @db.VarChar(280)
+  datePosted DateTime    @default(now())
+  received   Boolean     @default(false)
+  chat       Chat        @relation("chat", fields: [chatID], references: [id], onDelete: Cascade)
+  sender     User        @relation("sender", fields: [senderID], references: [id], onDelete: Cascade)
+  key        MessageKey? @relation("message")
 
   @@index([chatID])
   @@index([senderID])
 }
 
-model MessageCipherKey {
+model MessageKey {
   messageID String  @id
   message   Message @relation("message", fields: [messageID], references: [id], onDelete: Cascade)
-  key       String  @db.VarChar(280)
+  pub       String  @unique
+  priv      String  @unique
 }
 
 model SavedJob {

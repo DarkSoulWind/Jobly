@@ -1,18 +1,17 @@
-import { Dispatch, RefObject, SetStateAction, useEffect } from "react";
-import { encrypt } from "src/lib/hash";
-import { ChatState, Action, Message } from "src/lib/reducers/chatReducer";
-import { CHAT_ACTION } from "src/lib/actions/types/chat";
+import { Dispatch, RefObject, useEffect } from "react";
+import { decrypt } from "@lib/hash";
+import { ChatState, Action, MessageResponse } from "@lib/reducers/chatReducer";
+import { CHAT_ACTION } from "@lib/actions/types/chat";
 
 const useChatSection = (
   chatState: ChatState,
   dispatch: Dispatch<Action>,
   scrollDummyRef: RefObject<HTMLDivElement>,
-  setPersonTyping: Dispatch<SetStateAction<string>>
 ) => {
   // RUNS EVERY TIME THE CHAT IS CHANGED
   useEffect(() => {
     // handling receiving messages from the server
-    chatState.socket?.on("server new message", (message: Message) => {
+    chatState.socket?.on("server new message", (message: MessageResponse) => {
       // if the message belongs to that chat that you're in then it will be displayed
       if (message.chatID === chatState.selectedChatID) {
         dispatch({
@@ -20,7 +19,7 @@ const useChatSection = (
           payload: {
             newMessage: {
               ...message,
-              text: encrypt(message.text, message.cipher!.key),
+              text: decrypt(message.text.split(",").map(n => parseInt(n)), message.key!.priv.split(",").map(n => parseInt(n))),
             },
           },
         });
@@ -34,15 +33,15 @@ const useChatSection = (
       }, 100);
     });
 
-    chatState.socket?.on("user typing", (username: string) => {
-      if (username != chatState.yourUsername) {
-        setPersonTyping(username);
-        setTimeout(() => {
-          setPersonTyping("");
-        }, 3000);
-      }
-      // alert(`${username} is typing`)
-    });
+    // chatState.socket?.on("user typing", (username: string) => {
+    //   if (username != chatState.yourUsername) {
+    //     setPersonTyping(username);
+    //     setTimeout(() => {
+    //       setPersonTyping("");
+    //     }, 3000);
+    //   }
+    //   // alert(`${username} is typing`)
+    // });
 
     // handling deleted messages
     chatState.socket?.on("server deleted message", ({ id, chatID }) => {

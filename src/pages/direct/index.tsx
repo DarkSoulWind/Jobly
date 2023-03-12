@@ -1,6 +1,6 @@
 "DIRECT MESSAGES PAGE";
 
-import React, { useEffect, useReducer, useState } from "react";
+import React, { useEffect, useReducer } from "react";
 import { NextPage } from "next";
 import Head from "next/head";
 import { useRouter } from "next/router";
@@ -17,7 +17,7 @@ import {
   setOnlineStatus,
   setSocket,
   setYourUsername,
-} from "../../lib/actions";
+} from "@lib/actions";
 import { Chat, Participant } from "@prisma/client";
 import { trpc } from "@utils/trpc";
 import { Toaster } from "react-hot-toast";
@@ -168,7 +168,11 @@ const DirectMessagesPage: NextPage = () => {
             </div>
             <div className="p-2 overflow-y-scroll h-full">
               {/* <!-- Chat list --> */}
-              <ul className="space-y-2">
+              <ul className="space-y-2 text-center">
+                {chatData?.length === 0 && (
+                <p className="font-bold text-slate-400">Such empty</p>
+                )}
+
                 {chatData?.map((chat) => {
                   const guy = chat.participants?.find(
                     (participant) =>
@@ -184,7 +188,7 @@ const DirectMessagesPage: NextPage = () => {
                           : "bg-white"
                       } py-2 px-4 rounded-lg`}
                     >
-                      <a href="#" className="flex items-center space-x-2">
+                      <a href="#" className="flex items-center gap-2">
                         <img
                           className="h-10 w-10 rounded-full object-cover"
                           src={guy?.user.image}

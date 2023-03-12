@@ -1,3 +1,4 @@
+import { MessageKey } from "@prisma/client";
 import { Socket } from "socket.io-client";
 import { AllFollows, Chats, CHAT_ACTION } from "../actions/types/chat";
 
@@ -20,20 +21,18 @@ export type FollowResponse = {
 } | null;
 
 // THE TYPE OF RESPONSE WE GET FROM /api/messages/[chatID]
-export type Message = {
-	text: string;
-	id: string;
-	sender: {
-		image: string | null;
-		name: string;
-	};
-	chatID: string;
-	senderID: string;
-	datePosted: string;
-	received: boolean;
-	cipher: {
-		key: string;
-	} | null;
+export type MessageResponse = {
+    chatID: string;
+    text: string;
+    id: string;
+    key: MessageKey | null;
+    datePosted: Date;
+    received: boolean;
+    sender: {
+        name: string;
+        image: string;
+    };
+    senderID: string;
 };
 
 // THE TYPE FOR THE GLOBAL CHAT STATE
@@ -43,7 +42,7 @@ export interface ChatState {
 	yourUsername: string;
 	chats: Chats | null;
 	socket: Socket | null;
-	messages: Message[];
+	messages: MessageResponse[];
 	follows: AllFollows | null;
 }
 
@@ -57,9 +56,9 @@ export interface Action {
 		onlineStatus?: boolean;
 		chats?: Chats;
 		socket?: Socket;
-		messages?: Message[];
+		messages?: MessageResponse[];
 		messageID?: string;
-		newMessage?: Message;
+		newMessage?: MessageResponse;
 		follows?: AllFollows | null;
 	};
 }

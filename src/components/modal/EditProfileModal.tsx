@@ -1,17 +1,35 @@
-import React, { Dispatch, FC, FormEvent, Fragment, useState } from "react";
-import {
-  ProfileState,
-} from "src/lib/reducers/profileReducer";
+import React, { FC, FormEvent, Fragment, useState } from "react";
+import { ProfileState } from "src/lib/reducers/profileReducer";
 import { Dialog, Transition } from "@headlessui/react";
 import { trpc } from "@utils/trpc";
 import toast from "react-hot-toast";
 import { useSession } from "next-auth/react";
 
-type EditProfileModalProps = {
+const PRONOUNS = [
+  "ce/cir",
+  "co/co",
+  "cy/cyr",
+  "ey/em",
+  "he/him",
+  "hey/hem",
+  "ne/nem",
+  "qui/quem",
+  "she/her",
+  "sie/hir",
+  "tey/tem",
+  "they/them",
+  "xe/xem",
+  "xie/hir",
+  "yo/yo",
+  "ze/zir",
+  "ve/vis",
+];
+
+interface EditProfileModalProps {
   modalOpen: boolean;
   profileState: ProfileState;
   toggle: () => void;
-};
+}
 
 const EditProfileModal: FC<EditProfileModalProps> = ({
   modalOpen,
@@ -139,9 +157,13 @@ const EditProfileModal: FC<EditProfileModalProps> = ({
                         className="p-2 rounded-xl border-[2px] outline-1"
                       >
                         <option value="">Please select</option>
-                        <option value="He/Him">He/Him</option>
-                        <option value="She/Her">She/Her</option>
-                        <option value="They/Them">They/Them</option>
+                        {PRONOUNS.map((pronoun) => (
+                          <option value={pronoun}>{pronoun}</option>
+                        ))}
+
+                        {/* <option value="He/Him">He/Him</option> */}
+                        {/* <option value="She/Her">She/Her</option> */}
+                        {/* <option value="They/Them">They/Them</option> */}
                       </select>
 
                       <label className="text-sm mt-4">Bio</label>

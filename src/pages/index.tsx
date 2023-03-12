@@ -86,6 +86,15 @@ const Home: NextPage = () => {
 				</div>
 				<div className="w-full text-center py-10">
 					<p className="text-5xl font-bold">Popular jobs</p>
+
+          <div className="grid grid-cols-3 gap-5 mt-8 px-5">
+            {new Array(6).fill(1).map(() => (
+            <a href="jobs/search/Software%20Engineering" className="bg-white rounded-lg overflow-clip shadow-sm hover:shadow-lg shadow-black/20 hover:shadow-black/20 hover:-translate-y-2 transition-all ease-in-out duration-500">
+                <img className="" src="https://res.cloudinary.com/highereducation/images/f_auto,q_auto/v1663956192/BestColleges.com/What-Is-a-Software-Engineers-Salary_4733277e15/What-Is-a-Software-Engineers-Salary_4733277e15.jpg" alt="software engineering is king" />
+                <h5 className="py-2 font-semibold">Software Engineering</h5>
+              </a>
+            ))}
+          </div>
 				</div>
 			</div>
 

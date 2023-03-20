@@ -19,12 +19,13 @@ export class Edge<T extends { [key: string]: any }> extends Unit<T> {
 	get inputNode(): GraphNode<any> | null {
 		return this._inputNode;
 	}
+
 	get outputNode(): GraphNode<any> | null {
 		return this._outputNode;
 	}
 
 	// link a specific node in a certain direction
-	private linkTo(node: GraphNode<any>, direction: number): void {
+	private linkTo<T>(node: GraphNode<T>, direction: number): void {
 		// if direction is -1, then edge points to input node
 		if (direction <= 0) node?.inputEdges.push(this);
 
@@ -63,16 +64,6 @@ export class Edge<T extends { [key: string]: any }> extends Unit<T> {
 	setWeight(value: number) {
 		this._weight = value;
 		return this;
-	}
-
-	// find the opposite node given a starting node
-	oppositeNode<S extends { [key: string]: any }>(
-		node: GraphNode<S>
-	): GraphNode<any> | null {
-		if (this._inputNode === node) return this._outputNode;
-		else if (this._outputNode === node) return this._inputNode;
-
-		return null;
 	}
 
 	// remove connections from nodes

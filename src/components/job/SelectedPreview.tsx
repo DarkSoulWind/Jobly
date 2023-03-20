@@ -150,7 +150,8 @@ const SelectedPreview: FC<SelectedPreviewProps> = ({
 			<p className="max-w-[65%]">{jobPreviewData?.employer?.name}</p>
 			<p className="text-sm">{jobPreviewData?.location}</p>
 			<p className="text-sm">
-				{jobPreviewData?.salary} - {jobPreviewData?.employmentType}
+				{jobPreviewData?.salary} 
+        {/* - {jobPreviewData?.employmentType} */}
 			</p>
 
 			<img

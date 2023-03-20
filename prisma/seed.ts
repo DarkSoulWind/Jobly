@@ -252,6 +252,9 @@ async function main() {
     "Regional sales manager",
   ];
 
+  await prisma.user.deleteMany();
+  console.log("DELETED ALL USERS.")
+
   Promise.all(
     interests.map((interestName) =>
       prisma.interest.upsert({
@@ -267,6 +270,8 @@ async function main() {
   ).then((values) => {
     console.log(values);
   });
+
+
 }
 
 main()
